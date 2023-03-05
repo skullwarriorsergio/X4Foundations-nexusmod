@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <factions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="factions.xsd">
-  <faction id="invasionally" name="Gate Network Defenders" description="Gate Network Defenders Joint Force" shortname="Defenders" prefixname="GND" behaviourset="default" known="1" tags="protective" policefaction="player">
-    <color r="255" g="255" b="0" />
+  <faction id="invasionally" name="Gate Network Defenders" description="Gate Network Defenders Joint Force" shortname="DEF" prefixname="GND" behaviourset="default" known="1" tags="protective" policefaction="player">
+    <color r="155" g="255" b="155" />
     <icon active="faction_visitor" inactive="faction_visitor" />
     <relations>
       <relation faction="player" relation="1" />
@@ -22,9 +22,17 @@
       <relation faction="trinity" relation="1" />
       <relation faction="visitor" relation="1" />
       <relation faction="xenon" relation="-1" />
+	  <relation faction="fallensplit" relation="1" />
+	  <relation faction="freesplit" relation="1" />
+	  <relation faction="split" relation="1" />
+	  <relation faction="pioneers" relation="1" />
+	  <relation faction="terran" relation="1" />
+	  <relation faction="yaki" relation="1" />
+	  <relation faction="loanshark" relation="1" />
+	  <relation faction="scavenger" relation="1" />
     </relations>
   </faction>
-  <faction id="mindlessmercenaries" name="Zealot Merceneries" description="A group of zealot mercenaries in a crusade against all factions" shortname="Mercenaries" prefixname="MSM" behaviourset="default" known="1" tags="aggressive notradeoffer">
+  <faction id="mindlessmercenaries" name="Zealot Merceneries" description="A group of zealot mercenaries in a crusade against all factions" shortname="MRC" prefixname="MSM" behaviourset="default" known="1" tags="aggressive notradeoffer">
     <color r="255" g="0" b="0" />
     <icon active="faction_visitor" inactive="faction_visitor" />
     <relations>	  
@@ -46,6 +54,14 @@
       <relation faction="trinity" relation="-1" />
       <relation faction="visitor" relation="-1" />
       <relation faction="xenon" relation="-1" />
+	  <relation faction="fallensplit" relation="-1" />
+	  <relation faction="freesplit" relation="-1" />
+	  <relation faction="split" relation="-1" />
+	  <relation faction="pioneers" relation="-1" />
+	  <relation faction="terran" relation="-1" />
+	  <relation faction="yaki" relation="-1" />
+	  <relation faction="loanshark" relation="-1" />
+	  <relation faction="scavenger" relation="-1" />
     </relations>
   </faction>
 </factions>

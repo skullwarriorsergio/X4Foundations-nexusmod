@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mdscript name="xenonbuff" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
 	<cues>
-		<cue name="XenonBuff" instantiate="true" checkinterval="10min" checktime="player.age + 25s">
+		<cue name="XenonBuff" instantiate="true" checkinterval="5min" checktime="player.age + 25s">
 			<conditions>
 				<check_age min="96h"/>
 			</conditions>
 			<actions>
-			
+						
 				<debug_text text="'xenonBuff - Get Invasion Status ' + @player.entity.$XenonBuffedInvasion"/>
 				<debug_text text="'xenonBuff - Timer: Delta: ' + @player.entity.$XenonBuffedDelta"/>
 				<debug_text text="'xenonBuff - Timer: Last run: ' + @player.entity.$LastTimeXenonBuffed"/>
@@ -684,7 +684,8 @@
 			<actions>
 				<set_value name="$InvasionOrigin" exact="[macro.cluster_44_sector001_macro, macro.cluster_45_sector001_macro, macro.cluster_49_sector001_macro,
 				macro.cluster_31_sector001_macro, macro.cluster_48_sector001_macro, macro.cluster_43_sector001_macro, macro.cluster_50_sector001_macro,
-				macro.cluster_417_sector001_macro, macro.cluster_413_sector001_macro, macro.cluster_25_sector002_macro
+				macro.cluster_417_sector001_macro, macro.cluster_413_sector001_macro, macro.cluster_25_sector002_macro, macro.cluster_38_sector001_macro,
+				macro.cluster_39_sector001_macro, macro.cluster_408_sector001_macro, macro.cluster_46_sector001_macro
 				]"/>
 				<find_sector name="$XenonSectors" macro="$InvasionOrigin" multiple="true"/>
 				<debug_text text="'xenonBuff - Origin set to :' + $XenonSectors.random.name"/>
@@ -800,7 +801,7 @@
 								<set_value name="$SectorCentre" exact="$Sector.coreposition"/>
 								<do_if value="$NewShip">
 									<spawn_waiting_job_ship ship="$NewShip" sector="$Sector">
-									  <safepos x="$SectorCentre.x" y="$SectorCentre.y" z="$SectorCentre.z" radius="1km" min="1km" max="7km"/>
+									  <safepos x="$SectorCentre.x" y="$SectorCentre.y" z="$SectorCentre.z" radius="80km" min="80km" max="80km"/>
 									</spawn_waiting_job_ship>
 									<do_if value="$NewShip.exists">
 									  <debug_text text="'xenonBuff - Processing for protector fleet:' + $Sector.name + ': ship created'"/>
