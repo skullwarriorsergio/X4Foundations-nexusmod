@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<wares>  
+  <ware id="xenon_psi_emitter_mk1" name="Xenon Psi Emitter" description="Deploy a nav beacon that will lure a Xenon Fleet to our location. Caution is advice, once the fleet is summoned, it wont despawn until fully destroyed. The fleet can only be summoned after 4days in-game, prepare yourself meanwhile." transport="equipment" volume="1" tags="equipment satellite">
+    <price min="845800" average="901420" max="1054580" />
+    <production time="60" amount="1" method="default" name="Xenon Psi Emitter">
+      <primary>
+		<ware ware="energycells" amount="250" />
+        <ware ware="hullparts" amount="3" />
+		<ware ware="advancedelectronics" amount="5" />
+        <ware ware="scanningarrays" amount="5" />
+      </primary>
+    </production>
+    <production time="60" amount="1" method="xenon" name="Xenon Psi Emitter">
+      <primary>
+        <ware ware="energycells" amount="1000" />
+        <ware ware="silicon" amount="800" />
+        <ware ware="ore" amount="850" />
+      </primary>
+    </production>
+    <production time="60" amount="1" method="terran" name="Xenon Psi Emitter">
+      <primary>
+        <ware ware="computronicsubstrate" amount="6" />
+        <ware ware="energycells" amount="250" />
+        <ware ware="metallicmicrolattice" amount="20" />
+        <ware ware="siliconcarbide" amount="8" />
+      </primary>
+    </production>
+    <component ref="xenon_psi_emitter_macro" amount="1" />
+    <use threshold="0" />
+  </ware>
+</wares>

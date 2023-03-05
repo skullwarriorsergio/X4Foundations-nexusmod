@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<diff xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <add sel="//jobs">
+	<job id="xenon_invader_xl" name="Xenon Invader" comment="Xenon Invader">
+		<modifiers commandeerable="true"/>
+		<orders>
+		  <order order="Patrol" default="true">
+			<param name="range" value="class.zone"/>
+		  </order>
+		</orders>
+		<category faction="xenon" tags="[invader]" size="ship_xl"/>
+		<quota maxgalaxy="1"/>
+		<environment buildatshipyard="false" gate="true"/>
+		<location class="galaxy" macro="xu_ep2_universe_macro" faction="xenon" relation="self" comparison="exact"/>
+		<ship>
+		  <select faction="xenon" tags="[military, carrier]" size="ship_xl"/>
+		  <owner exact="xenon" overridenpc="true"/>
+		</ship>
+	</job>  
+    <job id="xenon_protector_xl" name="Xenon Protector" comment="Xenon Protector">
+		<modifiers commandeerable="true"/>
+		<orders>
+		  <order order="Patrol" default="true">
+			<param name="range" value="class.zone"/>
+		  </order>
+		</orders>
+		<category faction="xenon" tags="[protector]" size="ship_xl"/>
+		<quota sector="2" maxgalaxy="20"/>
+		<environment buildatshipyard="false" gate="true"/>
+		<location class="galaxy" macro="xu_ep2_universe_macro" faction="xenon" relation="self" comparison="exact"/>
+		<ship>
+		  <select faction="xenon" tags="[military, carrier]" size="ship_xl"/>
+		  <owner exact="xenon" overridenpc="true"/>
+		</ship>
+		<subordinates>
+		  <subordinate job="xenon_protector_destroyer_escort_xl"/>
+		</subordinates>
+	</job>
+	<job id="xenon_protector_destroyer_escort_xl" name="Xenon Protector" startactive="false">
+		<orders>
+		  <order order="Escort" default="true">
+			<param name="formation" value="formationshape.invvshape"/>
+			<param name="overrideformationskill" value="true"/>
+		  </order>
+		</orders>
+		<category faction="xenon" tags="[military, destroyer]" size="ship_xl"/>
+		<quota wing="2"/>
+		<location class="galaxy" macro="xu_ep2_universe_macro"/>
+		<environment buildatshipyard="false" gate="true"/>
+		<modifiers subordinate="true"/>
+		<ship>
+		  <select faction="xenon" tags="[military, destroyer]" size="ship_xl"/>
+		  <owner exact="xenon" overridenpc="true"/>
+		</ship>
+		<subordinates>
+		  <subordinate job="xenon_protector_frigate_escort_m"/>
+		</subordinates>
+    </job>
+    <job id="xenon_protector_frigate_escort_m" name="Xenon Protector" startactive="false">
+		<orders>
+		  <order order="Escort" default="true">
+			<param name="formation" value="formationshape.dartvertical"/>
+			<param name="formationparam" value="2500m"/>
+			<param name="overrideformationskill" value="true"/>
+		  </order>
+		</orders>
+		<category faction="xenon" tags="[military]" size="ship_m"/>
+		<quota wing="3"/>
+		<location class="galaxy" macro="xu_ep2_universe_macro"/>
+		<environment buildatshipyard="false" gate="true"/>
+		<modifiers subordinate="true"/>
+		<ship>
+		  <select faction="xenon" tags="[military, medium]" size="ship_m"/>
+		  <owner exact="xenon" overridenpc="true"/>
+		</ship>
+		<subordinates>
+		  <subordinate job="xenon_protector_fighter_escort_s_frigate"/>
+		</subordinates>
+	</job>
+	<job id="xenon_protector_fighter_escort_s_frigate" name="Xenon Protector" startactive="false">
+		<orders>
+		  <order order="Escort" default="true">
+			<param name="overrideformationskill" value="true"/>
+		  </order>
+		</orders>
+		<category faction="xenon" tags="[military, fighter]" size="ship_s"/>
+		<quota wing="4"/>
+		<location class="galaxy" macro="xu_ep2_universe_macro"/>
+		<environment buildatshipyard="false" gate="true"/>
+		<modifiers subordinate="true"/>
+		<ship>
+		  <select faction="xenon" tags="[military, fighter, selection]" size="ship_s"/>
+		  <owner exact="xenon" overridenpc="true"/>
+		</ship>
+	</job>
+  </add>
+</diff>

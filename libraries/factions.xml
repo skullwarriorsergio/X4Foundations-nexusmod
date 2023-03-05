@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<factions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="factions.xsd">
+  <faction id="invasionally" name="Gate Network Defenders" description="Gate Network Defenders Joint Force" shortname="Defenders" prefixname="GND" behaviourset="default" known="1" tags="protective" policefaction="player">
+    <color r="255" g="255" b="0" />
+    <icon active="faction_visitor" inactive="faction_visitor" />
+    <relations>
+      <relation faction="player" relation="1" />
+      <relation faction="khaak" relation="-1" />
+      <relation faction="alliance" relation="1" />
+      <relation faction="antigone" relation="1" />
+      <relation faction="argon" relation="1" />
+      <relation faction="buccaneers" relation="1" />
+      <relation faction="civilian" relation="1" />
+      <relation faction="hatikvah" relation="1" />
+      <relation faction="holyorder" relation="1" />
+      <relation faction="holyorderfanatic" relation="1" />
+      <relation faction="ministry" relation="1" />
+      <relation faction="paranid" relation="1" />
+      <relation faction="scaleplate" relation="1" />
+      <relation faction="smuggler" relation="1" />
+      <relation faction="teladi" relation="1" />
+      <relation faction="trinity" relation="1" />
+      <relation faction="visitor" relation="1" />
+      <relation faction="xenon" relation="-1" />
+    </relations>
+  </faction>
+  <faction id="mindlessmercenaries" name="Zealot Merceneries" description="A group of zealot mercenaries in a crusade against all factions" shortname="Mercenaries" prefixname="MSM" behaviourset="default" known="1" tags="aggressive notradeoffer">
+    <color r="255" g="0" b="0" />
+    <icon active="faction_visitor" inactive="faction_visitor" />
+    <relations>	  
+	  <relation faction="alliance" relation="-1" />
+      <relation faction="antigone" relation="-1" />
+      <relation faction="argon" relation="-1" />
+      <relation faction="buccaneers" relation="-1" />
+      <relation faction="civilian" relation="-1" />
+      <relation faction="criminal" relation="-1" />
+      <relation faction="hatikvah" relation="-1" />
+      <relation faction="holyorder" relation="-1" />
+      <relation faction="holyorderfanatic" relation="-1" />
+      <relation faction="ministry" relation="-1" />
+      <relation faction="paranid" relation="-1" />
+      <relation faction="player" relation="-1" />
+      <relation faction="scaleplate" relation="-1" />
+      <relation faction="smuggler" relation="-1" />
+      <relation faction="teladi" relation="-1" />
+      <relation faction="trinity" relation="-1" />
+      <relation faction="visitor" relation="-1" />
+      <relation faction="xenon" relation="-1" />
+    </relations>
+  </faction>
+</factions>

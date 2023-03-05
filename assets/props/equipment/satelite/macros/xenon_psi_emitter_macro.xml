@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<macros>
+  <macro name="xenon_psi_emitter_macro" class="satellite">
+    <component ref="eq_arg_satellite_01" />
+    <properties>
+      <identification name="Xenon Psi Emitter" description="Deploy a nav beacon that will lure a Xenon Fleet to our location. Caution is advice, once the fleet is summoned wont despawn until fully destroyed" deployable="1" icon="mapob_navbeacon" />
+      <explosioneffect strength="0" />
+      <radar range="0" />
+      <hull max="10000" />
+    </properties>
+  </macro>
+</macros>

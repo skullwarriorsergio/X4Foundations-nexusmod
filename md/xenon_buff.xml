@@ -1,0 +1,1097 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="xenonbuff" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
+	<cues>
+		<cue name="XenonBuff" instantiate="true" checkinterval="10min" checktime="player.age + 25s">
+			<conditions>
+				<check_age min="96h"/>
+			</conditions>
+			<actions>
+			
+				<debug_text text="'xenonBuff - Get Invasion Status ' + @player.entity.$XenonBuffedInvasion"/>
+				<debug_text text="'xenonBuff - Timer: Delta: ' + @player.entity.$XenonBuffedDelta"/>
+				<debug_text text="'xenonBuff - Timer: Last run: ' + @player.entity.$LastTimeXenonBuffed"/>
+				<debug_text text="'xenonBuff - Timer: game age: ' + player.age"/>
+			
+				<do_if value="@player.entity.$XenonBuffedInvasion == null">
+					<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>					
+					<debug_text text="'xenonBuff - Setting Invasion Default Status ' + @player.entity.$XenonBuffedInvasion"/>
+				</do_if>
+<!--	
+<do_if value="@player.entity.$XenonBuffedInvasion == 0">	
+	<include_actions ref="AddInvaderTest"/>
+</do_if>
+-->
+
+				<debug_text text="'xenonBuff - Starting'"/>				
+				<do_if value="@player.entity.$XenonBuffedDelta == null">
+					<set_value name="player.entity.$XenonBuffedDelta" exact="0s"/>					
+					<debug_text text="'xenonBuff - Setting time delta for first time'"/>
+				</do_if>
+				<do_if value="@player.entity.$LastTimeXenonBuffed == null">
+					<set_value name="player.entity.$LastTimeXenonBuffed" exact="player.age"/>
+					<debug_text text="'xenonBuff - Setting time counter for first time'"/>
+				</do_if>
+				<debug_text text="'xenonBuff - Checking for timer triggers'"/>				
+				<do_if value="player.age ge (@player.entity.$LastTimeXenonBuffed + @player.entity.$XenonBuffedDelta)">					
+					<debug_text text="'xenonBuff - Start xenon Buffing procedures'"/>
+					<include_actions ref="setTimers"/>
+					<!-- Refill Xenon Stations storage -->
+					<find_station name="$XenonStations" multiple="true" space="player.galaxy" functional="true">
+						<match_any>
+							<!--Target shipbuilding stations-->
+							<match_content class="class.buildmodule" />								
+						</match_any>
+						<!-- Xenon owned -->
+						<match owner="faction.xenon"/>
+					</find_station>
+					<do_all exact="$XenonStations.count" counter="$i">
+						<set_value name="$XenonStation" exact="$XenonStations.{$i}"/>
+						<include_actions ref="AddWares"/>				
+					</do_all>
+					<remove_value name="$XenonStations"/>
+					<remove_value name="$XenonStation"/>
+					
+					<!-- Add xenon protector and invader fleets -->
+					<include_actions ref="AddProtectors"/>
+					<do_if value="@player.entity.$XenonBuffedInvasion == 0">
+						<set_value name="player.entity.$XenonBuffedInvasion" exact="1"/>
+						<run_actions ref="SetInvasionOrigin" result="$InvadingSector"/>
+						<run_actions ref="SetInvaderFleetTarget" result="$targets"/>						
+						<set_value name="$InvasionTarget" exact="$targets.{1}"/>
+						<set_value name="$InvasionOtherTargets" exact="$targets.{2}"/>
+						<!-- Create a notification -->
+						<show_help custom="'Deep space probes has detected an enemy fleet signature heading towards ' + $InvadingSector.name + '. It will arrive whitin minutes.'" log="false" position="1" force="true" duration="8s" comment="Invaders Triggered"/>
+						<set_value name="$Header" exact="'\033R Early Warning System : Invasion Fleet Detected'"/>
+						<set_value name="$Body" exact="'Commander, deep space probes has detected an enemy fleet signature heading towards \033G' + $InvadingSector.name + '\033W. It will arrive whitin minutes.'"/>
+						<write_to_logbook title="$Header" text="$Body" category="alerts"/>
+						<signal_cue_instantly cue="AddInvaderFleet" param="[$InvadingSector, $InvasionTarget, $InvasionOtherTargets]" />
+					</do_if>
+				</do_if>
+			</actions>
+		</cue>
+		
+		<library name="AddInvaderTest">
+			<actions>
+				<debug_text text="'xenonBuff - test invasion start'"/>
+				<set_value name="$TestHomes" exact="[macro.cluster_04_sector001_macro]"/>
+				<find_sector name="$TestSectors" macro="$TestHomes" multiple="true"/>
+				<set_value name="$TestSector" exact="$TestSectors.random"/>
+				<set_value name="$MissionText" exact="''"/>
+				<set_value name="$TestSectorCenter" exact="$TestSector.coreposition"/>
+				<set_value name="$TestTarget" exact="null"/>
+				<set_value name="$OtherTargets" exact="player.ship"/>
+				<find_station name="$TargetStations" multiple="true" space="player.galaxy" functional="true">
+					<match owner="faction.player"/>
+				</find_station>
+				<do_if value="$TargetStations.count gt 0">
+					<set_value name="$TestTarget" exact="$TargetStations.random"/>
+					<set_value name="$OtherTargets" exact="$TargetStations"/>
+					<debug_text text="'xenonBuff - targeting station ' + $TestTarget.name"/>
+				</do_if>
+				<do_else>
+					<set_value name="$TestTarget" exact="player.ship"/>
+					<debug_text text="'xenonBuff - targeting player ship ' + $TestTarget.name"/>
+				</do_else>
+				
+				<set_value name="$TestTarget" exact="player.ship"/>
+				<create_ship name="$testship" macro="macro.ship_xen_s_scout_01_a_macro" sector="$TestSector">
+					<owner exact="faction.xenon"/>
+					<loadout>
+					  <level exact="1"/>
+					</loadout>
+					<pilot>
+					  <select faction="faction.xenon" tags="[tag.commander]"/>
+					</pilot>
+					<safepos x="$TestSectorCenter.x" y="$TestSectorCenter.y" z="$TestSectorCenter.z" radius="1km" min="1km" max="7km"/>
+				</create_ship>
+				<create_order id="'Attack'" object="$testship" immediate="true" override="true">
+					<param name="primarytarget" value="$TestTarget"/>
+					<param name="secondarytargets" value="[$OtherTargets]"/>
+					<param name="pursuetargets" value="true"/>
+                    <param name="checkrelation" value="false"/>
+					<param name="allowothertargets" value="false"/>
+				</create_order>
+				<do_all exact="6" counter="$j">
+					<create_ship name="$testship2" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$TestSector">
+						<owner exact="faction.xenon"/>
+						<loadout>
+						  <level exact="1"/>
+						</loadout>
+						<pilot>
+						  <select faction="faction.xenon" tags="[tag.commander]"/>
+						</pilot>
+						<safepos x="$TestSectorCenter.x" y="$TestSectorCenter.y" z="$TestSectorCenter.z" radius="1km" min="1km" max="7km"/>
+					</create_ship>
+					<create_order object="$testship2" id="'Escort'" default="true">
+						<param name="pursuedistance" value="$testship2.maxradarrange" />
+						<param name="target" value="$testship"/>
+						<param name="formation" value="formationshape.pointguard"/>
+						<param name="formationparam" value="1000m"/>
+					</create_order>
+					<add_to_group groupname="$AttackWave" object="$testship2"/>
+				</do_all>
+				<add_to_group groupname="$AttackWave" object="$testship"/>				
+				
+				<debug_text text="'xenonBuff - enemy ship created ' + $testship.name"/>
+				<run_actions ref="NotifyAndAddMission">
+					<param name="AttackWave" value="$AttackWave"/>
+					<param name="InvasionTarget" value="$TestTarget"/>
+					<param name="InvaderShip" value="$testship"/>
+					<param name="InvadingSector" value="$TestSector"/>
+				</run_actions>
+				
+				<remove_value name="$InvaderShip"/>
+				<remove_value name="$TargetStations"/>
+				<remove_value name="$TestHomes"/>
+				<remove_value name="$TestSectors"/>
+				<remove_value name="$TestSector"/>
+				<remove_value name="$TestSectorCenter"/>
+				<remove_value name="$testship"/>
+				<remove_value name="$TestTarget"/>
+			</actions>
+		</library>
+		
+		<!-- Notify player and add mission to destroy the invasion fleet -->
+		<library name="NotifyAndAddMission" purpose="run_actions">
+			<params>
+				<param name="AttackWave"/>
+				<param name="InvasionTarget"/>
+				<param name="InvaderShip"/>
+				<param name="InvadingSector"/>
+			</params>
+			<actions>
+				<debug_text text="'xenonBuff - init notification and mission'"/>
+				<set_value name="$Header" exact="'\033R Early Warning System : Invasion Fleet Detected'"/>
+				<set_value name="$Body" exact="'Commander, huge enemy fleet signature has being detected.\nTheir primary target seems to be \033G' + $InvasionTarget.name +'\033W but they surely wont stop there.'"/>
+				<show_help custom="'!ALERT! Enemy fleet has emerged in ' + $InvadingSector.name" log="false" position="1" force="true" duration="8s" comment="Invaders Spawned"/>	
+				<write_to_logbook title="$Header" text="$Body" interaction="showonmap" object="$InvaderShip" category="alerts"/>
+				<debug_text text="'xenonBuff - notification added :' + $Body"/>				
+				<signal_cue_instantly cue="kill_invasion_fleet" param="[$AttackWave, $InvasionTarget, $InvadingSector, $InvaderShip]"/>
+				<set_value name="player.entity.$XenonBuffedInvasion" exact="1"/>
+				<debug_text text="'xenonBuff - Setting New Invasion Status ' + @player.entity.$XenonBuffedInvasion"/>
+				<debug_text text="'xenonBuff - mission created'"/>
+				<remove_value name="$Header"/>
+				<remove_value name="$Body"/>
+			</actions>
+		</library>		
+		
+		
+		<!-- Defining Fleet Power 
+			//TODO: Calculate power based on players fleet power (make fleet with variable strength)
+		-->		
+		<library name="CalculateInvaderFleetPower" purpose="run_actions">
+			<actions>
+				<set_value name="$CarrierCount" min="0" max="2"/>
+				<set_value name="$DestroyerCount" min="1" max="3"/>
+				<set_value name="$FrigateCount" min="1" max="4"/>
+				<set_value name="$FigtherCount" min="1" max="3"/>
+				<debug_text text="'xenonBuff - invasion power calculated'"/>
+				<return value="[$CarrierCount, $DestroyerCount,$FrigateCount, $FigtherCount]" />
+			</actions>
+		</library>
+		
+		<!-- Defining Fleet Target -->
+		<library name="SetInvaderFleetTarget" purpose="run_actions">
+			<actions>
+				<find_station name="$TargetStations" multiple="true" space="player.galaxy" functional="true">	
+					<match_content class="class.buildmodule" />
+					<match owner="faction.xenon" negate="true"/>
+					<match owner="faction.khaak" negate="true"/>
+				</find_station>
+				<do_if value="$TargetStations.count gt 0">
+					<return value="[$TargetStations.random, $TargetStations]" />
+				</do_if>
+				<do_else>
+					<return value="[]" />
+				</do_else>
+				<debug_text text="'xenonBuff - invasion target lock: ' + $InvasionTarget.name"/>
+			</actions>
+		</library>
+		
+		<!-- Defining Fleet -->
+		<library name="CreateXenonInvaderFleet" purpose="run_actions">
+			<params>
+				<param name="InvadingSector"/>
+				<param name="InvasionTarget"/>
+				<param name="InvasionOtherTargets"/>
+				<param name="DestroyerCount"/>
+				<param name="CarrierCount"/>
+				<param name="FrigateCount"/>
+				<param name="FigtherCount"/>
+			</params>
+			<actions>
+				<debug_text text="'xenonBuff - Processing for Xenon invader fleet on: ' + $InvadingSector.name"/>
+				<set_value name="$InvaderShip" exact="null"/>
+				<set_value name="$InvadingSectorCenter" exact="$InvadingSector.coreposition"/>
+				<get_suitable_job result="$InvaderShipJob" faction="faction.xenon" size="class.ship_xl" tags="[tag.invader]"/>
+				<do_if value="$InvaderShipJob">
+					<request_job_ship name="$InvaderShip" job="$InvaderShipJob" requester="$InvadingSector"/>
+					<do_if value="$InvaderShip">
+						<spawn_waiting_job_ship ship="$InvaderShip" sector="$InvadingSector">
+						  <safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="1km" min="1km" max="7km"/>
+						</spawn_waiting_job_ship>
+						<do_if value="$InvaderShip.exists">
+						  <debug_text text="'xenonBuff - Processing for protector fleet:' + $InvadingSector.name + ': ship created'"/>
+						  <activate_waiting_job_ship ship="$InvaderShip"/>
+						</do_if>
+						<do_else>
+						  <remove_job_ship_request ship="$InvaderShip"/>
+						  <set_value name="$InvaderShip" exact="null"/>
+						</do_else>
+					</do_if>					
+					<do_else>
+						<debug_text text="'xenonBuff - Invader fleet already exists somehow.'"/>
+					</do_else>
+
+					<do_if value="$InvaderShip">
+						<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
+						<!-- Finding Invasion Targets -->
+						<set_value name="$InvasionTarget" exact="player.ship"/>
+						<set_value name="$InvasionOtherTargets" exact="player.ship"/>
+						<!-- Set invader ship orders -->
+						<create_order id="'Attack'" object="$InvaderShip" immediate="true" override="true">
+							<param name="primarytarget" value="$InvasionTarget"/>
+							<param name="secondarytargets" value="[$InvasionOtherTargets]"/>
+							<param name="pursuetargets" value="true"/>
+							<param name="checkrelation" value="false"/>
+						</create_order>
+						<!-- Create Invasion Fleet subordinates -->
+						<do_all exact="$DestroyerCount" counter="$j">
+							<create_ship name="$shipDestroEscort" macro="macro.ship_xen_xl_destroyer_01_a_macro" sector="$InvadingSector">
+								<owner exact="faction.xenon"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.xenon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
+							</create_ship>
+							<create_order object="$shipDestroEscort" id="'Escort'" default="true">
+								<param name="target" value="$InvaderShip"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="formationparam" value="1000m"/>
+							</create_order>
+							<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
+							<do_all exact="$FrigateCount" counter="$k">
+									<create_ship name="$shipFrig" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$InvadingSector">
+										<owner exact="faction.xenon"/>
+										<loadout>
+										  <level exact="1"/>
+										</loadout>
+										<pilot>
+										  <select faction="faction.xenon" tags="[tag.commander]"/>
+										</pilot>
+										<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
+									</create_ship>
+									<create_order object="$shipFrig" id="'Escort'" default="true">
+										<param name="target" value="$shipDestroEscort"/>
+										<param name="formation" value="formationshape.pointguard"/>
+										<param name="formationparam" value="200m"/>
+										<param name="pursuedistance" value="$shipDestroEscort.maxradarrange" />
+									</create_order>
+									<do_all exact="$FigtherCount" counter="$l">
+										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
+											<owner exact="faction.xenon"/>
+											<loadout>
+											  <level exact="1"/>
+											</loadout>
+											<pilot>
+											  <select faction="faction.xenon" tags="[tag.commander]"/>
+											</pilot>
+											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
+										</create_ship>
+										<create_order object="$shipSmall" id="'Escort'" default="true">
+											<param name="target" value="$shipFrig"/>
+											<param name="formation" value="formationshape.pointguard"/>
+											<param name="pursuedistance" value="$shipFrig.maxradarrange" />
+											<param name="formationparam" value="200m"/>
+										</create_order>
+										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
+										<remove_value name="$shipSmall"/>	
+									</do_all>
+									<add_to_group groupname="$AttackWave" object="$shipFrig"/>
+									<remove_value name="$shipFrig"/>
+								</do_all>
+							<remove_value name="$shipDestroEscort"/>													
+						</do_all>	
+						<do_all exact="$CarrierCount" counter="$i">
+							<create_ship name="$shipCarrier" macro="macro.ship_xen_xl_carrier_01_a_macro" sector="$InvadingSector">
+								<owner exact="faction.xenon"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.xenon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
+							</create_ship>
+							<create_order object="$shipCarrier" id="'Escort'" default="true">
+								<param name="target" value="$InvaderShip"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="formationparam" value="1000m"/>
+								<param name="pursuedistance" value="$InvaderShip.maxradarrange" />
+							</create_order>
+							<!-- Add subordinates -->
+							<do_all exact="$DestroyerCount" counter="$j">
+								<create_ship name="$shipDestro" macro="macro.ship_xen_xl_destroyer_01_a_macro" sector="$InvadingSector">
+									<owner exact="faction.xenon"/>
+									<loadout>
+									  <level exact="1"/>
+									</loadout>
+									<pilot>
+									  <select faction="faction.xenon" tags="[tag.commander]"/>
+									</pilot>
+									<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
+								</create_ship>
+								<create_order object="$shipDestro" id="'Escort'" default="true">
+									<param name="target" value="$shipCarrier"/>
+									<param name="formation" value="formationshape.pointguard"/>
+									<param name="formationparam" value="1000m"/>
+									<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+								</create_order>
+								<do_all exact="$FrigateCount" counter="$k">
+									<create_ship name="$shipFrig" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$InvadingSector">
+										<owner exact="faction.xenon"/>
+										<loadout>
+										  <level exact="1"/>
+										</loadout>
+										<pilot>
+										  <select faction="faction.xenon" tags="[tag.commander]"/>
+										</pilot>
+										<safepos object="$shipDestro" radius="1km" min="1km" max="5km"/>
+									</create_ship>
+									<create_order object="$shipFrig" id="'Escort'" default="true">
+										<param name="target" value="$shipDestro"/>
+										<param name="formation" value="formationshape.pointguard"/>
+										<param name="formationparam" value="200m"/>
+										<param name="pursuedistance" value="$shipDestro.maxradarrange" />
+									</create_order>
+									<do_all exact="$FigtherCount" counter="$l">
+										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
+											<owner exact="faction.xenon"/>
+											<loadout>
+											  <level exact="1"/>
+											</loadout>
+											<pilot>
+											  <select faction="faction.xenon" tags="[tag.commander]"/>
+											</pilot>
+											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
+										</create_ship>
+										<create_order object="$shipSmall" id="'Escort'" default="true">
+											<param name="target" value="$shipFrig"/>
+											<param name="formation" value="formationshape.pointguard"/>
+											<param name="pursuedistance" value="$shipFrig.maxradarrange" />
+											<param name="formationparam" value="200m"/>
+										</create_order>
+										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
+										<remove_value name="$shipSmall"/>	
+									</do_all>
+									<add_to_group groupname="$AttackWave" object="$shipFrig"/>
+									<remove_value name="$shipFrig"/>
+								</do_all>
+								<add_to_group groupname="$AttackWave" object="$shipDestro"/>
+								<remove_value name="$shipDestro"/>
+							</do_all>							
+							<add_to_group groupname="$AttackWave" object="$shipCarrier"/>
+							<remove_value name="$shipCarrier"/>							
+						</do_all>
+					</do_if>						
+				</do_if>
+				<return value="[$InvaderShip ,$AttackWave]" />
+				<remove_value name="$InvadingShipJob"/>
+				<remove_value name="$InvadingSectorCenter"/>
+			</actions>
+		</library>
+		
+		<!-- Defining Fleet -->
+		<library name="CreateRegularInvaderFleet" purpose="run_actions">
+			<params>
+				<param name="InvadingSector"/>
+				<param name="InvasionTarget"/>
+				<param name="InvasionOtherTargets"/>
+				<param name="DestroyerCount"/>
+				<param name="CarrierCount"/>
+				<param name="FrigateCount"/>
+				<param name="FigtherCount"/>
+			</params>
+			<actions>
+				<debug_text text="'xenonBuff - Processing for regular invader fleet on: ' + $InvadingSector.name"/>
+				
+				<debug_text text="'xenonBuff - invader fleet destroyer:' + $DestroyerCount"/>
+				<debug_text text="'xenonBuff - invader fleet carrier:' + $CarrierCount"/>
+				<debug_text text="'xenonBuff - invader fleet frigate:' + $FrigateCount"/>
+				<debug_text text="'xenonBuff - invader fleet figther:' + $FigtherCount"/>
+				
+				<set_value name="$InvaderShip" exact="null"/>
+				<set_value name="$InvadingSectorCenter" exact="$InvadingSector.coreposition"/>
+				<do_any>
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+				</do_any>
+				<create_ship name="$InvaderShip" macro="$FleetLeaderMacro" capturable="false" sector="$InvadingSector">
+					<owner exact="faction.mindlessmercenaries"/>
+					<loadout>
+					  <level exact="1"/>
+					</loadout>
+					<pilot>
+					  <select faction="faction.argon" tags="[tag.commander]"/>
+					</pilot>
+					<safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="200km" min="180km" max="250km"/>
+				</create_ship>
+
+				<do_if value="$InvaderShip">
+					<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
+					<!-- Finding Invasion Targets -->
+					<set_value name="$InvasionTarget" exact="player.ship"/>
+					<set_value name="$InvasionOtherTargets" exact="player.ship"/>
+					<!-- Set invader ship orders -->
+					<create_order id="'Attack'" object="$InvaderShip" immediate="true" override="true">
+						<param name="primarytarget" value="$InvasionTarget"/>
+						<param name="secondarytargets" value="[$InvasionOtherTargets]"/>
+						<param name="pursuetargets" value="true"/>
+						<param name="checkrelation" value="false"/>
+					</create_order>
+					<!-- Create Invasion Fleet subordinates -->
+					<do_all exact="$DestroyerCount" counter="$j">
+						<do_any>
+							<set_value name="$FleetDestMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+							<set_value name="$FleetDestMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+							<set_value name="$FleetDestMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+							<set_value name="$FleetDestMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+							<set_value name="$FleetDestMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+						</do_any>
+						<create_ship name="$shipDestroEscort" macro="$FleetDestMacro" capturable="false" sector="$InvadingSector">
+							<owner exact="faction.mindlessmercenaries"/>
+							<loadout>
+							  <level exact="1"/>
+							</loadout>
+							<pilot>
+							  <select faction="faction.argon" tags="[tag.commander]"/>
+							</pilot>
+							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
+						</create_ship>
+						<create_order object="$shipDestroEscort" id="'Escort'" default="true">
+							<param name="target" value="$InvaderShip"/>
+							<param name="formation" value="formationshape.pointguard"/>
+							<param name="formationparam" value="1000m"/>
+						</create_order>
+						<debug_text text="'xenonBuff - destroyer created:' + $shipDestroEscort"/>
+						<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
+						<do_all exact="$FrigateCount" counter="$k">
+							<do_any>
+								<set_value name="$fleetMMacro" exact="macro.ship_spl_m_frigate_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_ter_m_frigate_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_par_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_tel_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_arg_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_spl_m_corvette_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_ter_m_corvette_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_par_m_corvette_01_a_macro" />
+							</do_any>
+							<create_ship name="$shipFrig" macro="$fleetMMacro" capturable="false" sector="$InvadingSector">
+								<owner exact="faction.mindlessmercenaries"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.argon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
+							</create_ship>								
+							<create_order object="$shipFrig" id="'Escort'" default="true">
+								<param name="target" value="$shipDestroEscort"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="formationparam" value="200m"/>
+								<param name="pursuedistance" value="$shipDestroEscort.maxradarrange" />
+							</create_order>
+							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>
+							<do_all exact="$FigtherCount" counter="$l">
+								<do_any>
+									<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_heavyfighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_heavyfighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_par_s_heavyfighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_heavyfighter_02_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_tel_s_fighter_01_a_macro" />
+								</do_any>
+								<create_ship name="$shipSmall" macro="$fleetShipMacro" capturable="false" sector="$InvadingSector">
+									<owner exact="faction.mindlessmercenaries"/>
+									<loadout>
+									  <level exact="1"/>
+									</loadout>
+									<pilot>
+									  <select faction="faction.argon" tags="[tag.commander]"/>
+									</pilot>
+									<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
+								</create_ship>
+								<create_order object="$shipSmall" id="'Escort'" default="true">
+									<param name="target" value="$shipFrig"/>
+									<param name="formation" value="formationshape.pointguard"/>
+									<param name="pursuedistance" value="$shipFrig.maxradarrange" />
+									<param name="formationparam" value="200m"/>
+								</create_order>
+								<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
+								<add_to_group groupname="$AttackWave" object="$shipSmall"/>
+								<remove_value name="$shipSmall"/>	
+							</do_all>
+							<add_to_group groupname="$AttackWave" object="$shipFrig"/>
+							<remove_value name="$shipFrig"/>
+						</do_all>
+						<remove_value name="$shipDestroEscort"/>													
+					</do_all>	
+					<do_all exact="$CarrierCount" counter="$i">
+						<do_any>
+							<set_value name="$FleetCarrierMacro" exact="macro.ship_tel_xl_carrier_01_a_macro" />
+							<set_value name="$FleetCarrierMacro" exact="macro.ship_par_xl_carrier_02_a_macro" />
+							<set_value name="$FleetCarrierMacro" exact="macro.ship_ter_xl_carrier_01_a_macro" />
+							<set_value name="$FleetCarrierMacro" exact="macro.ship_arg_xl_carrier_01_a_macro" />
+							<set_value name="$FleetCarrierMacro" exact="macro.ship_spl_xl_carrier_01_a_macro" />
+						</do_any>
+						<create_ship name="$shipCarrier" macro="$FleetCarrierMacro" capturable="false" sector="$InvadingSector">
+							<owner exact="faction.mindlessmercenaries"/>
+							<loadout>
+							  <level exact="1"/>
+							</loadout>
+							<pilot>
+							  <select faction="faction.argon" tags="[tag.commander]"/>
+							</pilot>
+							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
+						</create_ship>						
+						<create_order object="$shipCarrier" id="'Escort'" default="true">
+							<param name="target" value="$InvaderShip"/>
+							<param name="formation" value="formationshape.pointguard"/>
+							<param name="formationparam" value="1000m"/>
+							<param name="pursuedistance" value="$InvaderShip.maxradarrange" />
+						</create_order>
+						<debug_text text="'xenonBuff - carrier created:' + $shipCarrier"/>
+						<!-- Add subordinates -->
+						<do_all exact="$DestroyerCount" counter="$j">
+							<do_any>
+								<set_value name="$FleetDestMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+								<set_value name="$FleetDestMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+								<set_value name="$FleetDestMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+								<set_value name="$FleetDestMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+								<set_value name="$FleetDestMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+							</do_any>
+							<create_ship name="$shipDestro" macro="$FleetDestMacro" capturable="false" sector="$InvadingSector">
+								<owner exact="faction.mindlessmercenaries"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.argon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
+							</create_ship>
+							<create_order object="$shipDestro" id="'Escort'" default="true">
+								<param name="target" value="$shipCarrier"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="formationparam" value="1000m"/>
+								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+							</create_order>
+							<debug_text text="'xenonBuff - destroyer created:' + $shipDestro"/>							
+							<add_to_group groupname="$AttackWave" object="$shipDestro"/>
+							<remove_value name="$shipDestro"/>
+						</do_all>
+						<set_value name="$escortCount" exact="$FrigateCount * 2"/>
+						<do_if value="$DestroyerCount ge 1">
+							<set_value name="$escortCount" exact="$DestroyerCount * $FrigateCount"/>
+						</do_if>						
+						<do_all exact="$escortCount" counter="$k">
+							<do_any>
+								<set_value name="$fleetMMacro" exact="macro.ship_spl_m_frigate_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_ter_m_frigate_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_par_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_tel_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_arg_m_frigate_01_b_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_spl_m_corvette_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_ter_m_corvette_01_a_macro" />
+								<set_value name="$fleetMMacro" exact="macro.ship_par_m_corvette_01_a_macro" />
+							</do_any>
+							<create_ship name="$shipFrig" macro="$fleetMMacro" capturable="false" sector="$InvadingSector">
+								<owner exact="faction.mindlessmercenaries"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.argon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
+							</create_ship>								
+							<create_order object="$shipFrig" id="'Escort'" default="true">
+								<param name="target" value="$shipCarrier"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="formationparam" value="200m"/>
+								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+							</create_order>
+							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>							
+							<add_to_group groupname="$AttackWave" object="$shipFrig"/>
+							<remove_value name="$shipFrig"/>
+						</do_all>
+						<remove_value name="$escortCount"/>
+						<set_value name="$escortCount" exact="$FigtherCount * 2"/>
+						<do_if value="$DestroyerCount ge 1">
+							<set_value name="$escortCount" exact="$DestroyerCount * $FrigateCount"/>
+						</do_if>
+						<do_if value="$FrigateCount ge 1">
+							<set_value name="$escortCount" exact="$FrigateCount * $escortCount"/>
+						</do_if>
+						<do_all exact="$escortCount" counter="$l">
+							<do_any>
+								<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_heavyfighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_heavyfighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_par_s_heavyfighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_heavyfighter_02_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_tel_s_fighter_01_a_macro" />
+							</do_any>
+							<create_ship name="$shipSmall" macro="$fleetShipMacro" capturable="false" sector="$InvadingSector">
+								<owner exact="faction.mindlessmercenaries"/>
+								<loadout>
+								  <level exact="1"/>
+								</loadout>
+								<pilot>
+								  <select faction="faction.argon" tags="[tag.commander]"/>
+								</pilot>
+								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
+							</create_ship>
+							<create_order object="$shipSmall" id="'Escort'" default="true">
+								<param name="target" value="$shipCarrier"/>
+								<param name="formation" value="formationshape.pointguard"/>
+								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+								<param name="formationparam" value="200m"/>
+							</create_order>
+							<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
+							<add_to_group groupname="$AttackWave" object="$shipSmall"/>
+							<remove_value name="$shipSmall"/>	
+						</do_all>
+						<remove_value name="$escortCount"/>
+						<add_to_group groupname="$AttackWave" object="$shipCarrier"/>
+						<remove_value name="$shipCarrier"/>							
+					</do_all>
+				</do_if>
+				<return value="[$InvaderShip ,$AttackWave]" />
+				<remove_value name="$InvadingShipJob"/>
+				<remove_value name="$InvadingSectorCenter"/>
+			</actions>
+		</library>
+		
+		<library name="SetInvasionOrigin" purpose="run_actions">
+			<actions>
+				<set_value name="$InvasionOrigin" exact="[macro.cluster_44_sector001_macro, macro.cluster_45_sector001_macro, macro.cluster_49_sector001_macro,
+				macro.cluster_31_sector001_macro, macro.cluster_48_sector001_macro, macro.cluster_43_sector001_macro, macro.cluster_50_sector001_macro,
+				macro.cluster_417_sector001_macro, macro.cluster_413_sector001_macro, macro.cluster_25_sector002_macro
+				]"/>
+				<find_sector name="$XenonSectors" macro="$InvasionOrigin" multiple="true"/>
+				<debug_text text="'xenonBuff - Origin set to :' + $XenonSectors.random.name"/>
+				<return value="$XenonSectors.random" />
+			</actions>
+		</library>
+		
+		<!-- Add invasion fleet -->
+		<cue name="AddInvaderFleet" instantiate="true">
+			<conditions>
+				<event_cue_signalled />
+			</conditions>
+			<delay min="15min" max="25min"/>
+			<actions>	
+				<set_value name="$InvadingSector" exact="@event.param.{1}"/>
+				<set_value name="$InvasionTarget" exact="@event.param.{2}"/>
+				<set_value name="$InvasionOtherTargets" exact="@event.param.{3}"/>
+				<debug_text text="'xenonBuff - Processing for invader fleet:' + $InvadingSector.name"/>
+				<!-- Default Fleet Power -->
+				<set_value name="$CarrierCount" exact="0"/>
+				<set_value name="$DestroyerCount" exact="1"/>
+				<set_value name="$FrigateCount" exact="2"/>
+				<set_value name="$FigtherCount" exact="2"/>
+				<!-- Calculate fleet power -->
+				<debug_text text="'xenonBuff - Calculating fleet power'"/>
+				<run_actions ref="CalculateInvaderFleetPower" result="$FleetPower"/>
+				<debug_text text="'xenonBuff - invader fleet power:' + $FleetPower"/>
+				<set_value name="$CarrierCount" exact="$FleetPower.{1}"/>
+				<set_value name="$DestroyerCount" exact="$FleetPower.{2}"/>
+				<set_value name="$FrigateCount" exact="$FleetPower.{3}"/>
+				<set_value name="$FigtherCount" exact="$FleetPower.{4}"/>
+				<!-- Creating the fleet -->
+				<debug_text text="'xenonBuff - Setting fleet type'"/>
+				<set_value name="$fleetType" min="0" max="4"/>
+				<do_if value="$fleetType ge 3">
+					<run_actions ref="CreateXenonInvaderFleet" result="$targets">
+						<param name="InvadingSector" value="$InvadingSector"/>
+						<param name="InvasionTarget" value="$InvasionTarget"/>
+						<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
+						<param name="DestroyerCount" value="$DestroyerCount"/>
+						<param name="CarrierCount" value="$CarrierCount"/>
+						<param name="FrigateCount" value="$FrigateCount"/>
+						<param name="FigtherCount" value="$FigtherCount"/>
+					</run_actions>
+				</do_if>
+				<do_else>
+					<run_actions ref="CreateRegularInvaderFleet" result="$targets">
+						<param name="InvadingSector" value="$InvadingSector"/>
+						<param name="InvasionTarget" value="$InvasionTarget"/>
+						<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
+						<param name="DestroyerCount" value="$DestroyerCount"/>
+						<param name="CarrierCount" value="$CarrierCount"/>
+						<param name="FrigateCount" value="$FrigateCount"/>
+						<param name="FigtherCount" value="$FigtherCount"/>
+					</run_actions>
+				</do_else>
+				
+				<set_value name="$InvaderShip" exact="$targets.{1}"/>
+				<set_value name="$AttackWave" exact="$targets.{2}"/>
+				
+				<debug_text text="'xenonBuff - AddFleet leader:' + $InvaderShip"/>
+				<debug_text text="'xenonBuff - AddFleet fleet:' + $AttackWave"/>
+				
+				<!-- Add notification and mission only if the invasion fleet was successfully created -->
+				<do_if value="$InvaderShip">
+					<debug_text text="'xenonBuff - invader fleet group:' + $AttackWave"/>
+					<run_actions ref="NotifyAndAddMission">
+						<param name="AttackWave" value="$AttackWave"/>
+						<param name="InvasionTarget" value="$InvasionTarget"/>
+						<param name="InvaderShip" value="$InvaderShip"/>
+						<param name="InvadingSector" value="$InvadingSector"/>
+					</run_actions>
+				</do_if>
+				<do_else>
+					<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
+				</do_else>	
+				<!-- Cleaning up some variables -->
+				<remove_value name="$fleetType"/>
+				<remove_value name="$AttackWave"/>
+				<remove_value name="$FleetPower"/>
+				<remove_value name="$InvasionTarget"/>
+				<remove_value name="$TargetStations"/>
+				<remove_value name="$InvasionOtherTargets"/>
+				<remove_value name="$CarrierCount"/>
+				<remove_value name="$DestroyerCount"/>
+				<remove_value name="$FrigateCount"/>
+				<remove_value name="$FigtherCount"/>
+				<remove_value name="$XenonSectors"/>
+				<remove_value name="$XenonHomes"/>
+				<reset_cue cue="AddInvaderFleet"/>
+			</actions>
+		</cue>
+		
+		<!-- Add xenon home sectors protection fleets -->
+		<library name="AddProtectors">
+			<actions>
+				<set_value name="$XenonHomes" exact="[macro.cluster_17_sector001_macro, macro.cluster_21_sector001_macro, macro.cluster_21_sector002_macro, macro.cluster_26_sector001_macro, macro.cluster_414_sector001_macro, macro.cluster_413_sector001_macro, macro.cluster_33_sector001_macro, macro.cluster_424_sector001_macro, macro.cluster_424_sector002_macro, macro.cluster_415_sector001_macro, macro.cluster_112_sector001_macro]"/>
+				<find_sector name="$XenonSectors" macro="$XenonHomes" multiple="true"/>
+				<set_value name="$notificationlist" exact="'\033R'"/>
+				<do_all exact="$XenonSectors.count" counter="$i">					 
+					 <set_value name="$Sector" exact="$XenonSectors.{$i}"/>
+					 <set_value name="$OwnedSector" exact="true"/>
+					 <do_if value="$OwnedSector">
+						<debug_text text="'xenonBuff - Processing for protector fleet:' + $Sector.name"/>
+						<find_ship_by_true_owner name="$protectors" faction="faction.xenon" commandeerable="true" class="[class.ship_xl]" primarypurpose="purpose.fight" multiple="true" jobtags="[tag.protector]" space="$Sector"/>
+						<do_if value="$protectors.count le 0">
+							<debug_text text="'xenonBuff - Processing for protector fleet:' + $Sector.name + ': No ship found'"/>
+							<get_suitable_job result="$ShipJob" faction="faction.xenon" size="class.ship_xl" tags="[tag.protector]"/>
+							<set_value name="$NewShip" exact="null"/>
+							<debug_text text="'xenonBuff - Processing for protector fleet - job:' + $ShipJob"/>
+							<do_if value="$ShipJob">
+								<request_job_ship name="$NewShip" job="$ShipJob" requester="$Sector"/>
+								<set_value name="$SectorCentre" exact="$Sector.coreposition"/>
+								<do_if value="$NewShip">
+									<spawn_waiting_job_ship ship="$NewShip" sector="$Sector">
+									  <safepos x="$SectorCentre.x" y="$SectorCentre.y" z="$SectorCentre.z" radius="1km" min="1km" max="7km"/>
+									</spawn_waiting_job_ship>
+									<do_if value="$NewShip.exists">
+									  <debug_text text="'xenonBuff - Processing for protector fleet:' + $Sector.name + ': ship created'"/>
+									  <set_value name="$notificationlist" operation="add" exact="'\n ' + $Sector.name" />
+									  <activate_waiting_job_ship ship="$NewShip"/>
+									  <!-- Adding some immediate escort for the Xenon Protector I -->
+									  <do_all exact="2" counter="$k">
+										<create_ship name="$shipFrig" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$Sector">
+											<owner exact="faction.xenon"/>
+											<loadout>
+											  <level exact="1"/>
+											</loadout>
+											<pilot>
+											  <select faction="faction.xenon" tags="[tag.commander]"/>
+											</pilot>
+											<safepos object="$NewShip" radius="1km" min="1km" max="5km"/>
+										</create_ship>
+										<create_order object="$shipFrig" id="'Escort'" default="true">
+											<param name="target" value="$NewShip"/>
+											<param name="formation" value="formationshape.pointguard"/>
+											<param name="formationparam" value="200m"/>
+											<param name="pursuedistance" value="$NewShip.maxradarrange" />
+										</create_order>
+										<do_all exact="3" counter="$l">
+											<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$Sector">
+												<owner exact="faction.xenon"/>
+												<loadout>
+												  <level exact="1"/>
+												</loadout>
+												<pilot>
+												  <select faction="faction.xenon" tags="[tag.commander]"/>
+												</pilot>
+												<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
+											</create_ship>
+											<create_order object="$shipSmall" id="'Escort'" default="true">
+												<param name="target" value="$shipFrig"/>
+												<param name="formation" value="formationshape.pointguard"/>
+												<param name="pursuedistance" value="$shipFrig.maxradarrange" />
+												<param name="formationparam" value="200m"/>
+											</create_order>
+											<remove_value name="$shipSmall"/>	
+										</do_all>
+										<remove_value name="$shipFrig"/>
+									  </do_all>
+								
+									</do_if>
+									<do_else>
+									  <remove_job_ship_request ship="$NewShip"/>
+									</do_else>
+								</do_if>
+								<remove_value name="$NewShip"/>
+								<remove_value name="$SectorCentre"/>
+							</do_if>
+						</do_if>					
+					</do_if>						
+					<remove_value name="$Sector"/>
+					<remove_value name="$ShipJob"/>
+					<remove_value name="$OwnedSector"/>
+					<remove_value name="$protectors"/>
+				</do_all>
+				<write_to_logbook title="'Xenon Reinforcements'" text="'Deep space probes detect xenon reinforcements on the following sectors.' + $notificationlist" category="alerts"/>
+				<remove_value name="$XenonSectors"/>
+				<remove_value name="$XenonHomes"/>
+			</actions>
+		</library>
+		
+		<!-- Set timers for next Xenon Buff -->
+		<library name="setTimers">
+			<actions>
+				<set_value name="player.entity.$XenonBuffedDelta" min="1h" max="2h"/>
+				<set_value name="player.entity.$LastTimeXenonBuffed" exact="player.age"/>
+				<debug_text text="'xenonBuff delta:' + player.entity.$XenonBuffedDelta"/>
+				<debug_text text="'xenonBuff time:' + player.entity.$LastTimeXenonBuffed"/>
+			</actions>
+		</library>
+						
+		<!-- Add wares to Xenon station to refill its storage -->
+		<library name="AddWares">
+			<actions>
+				<do_if value="$XenonStation.exists">
+					<debug_text text="'xenonBuff on :' + $XenonStation.name"/>
+					<set_value name="$needwares" exact="0" />
+					
+					<do_all exact="$XenonStation.cargo.list.count" counter="$j">			
+						<set_value name="$ware" exact="$XenonStation.cargo.list.{$j}"/>
+						<set_value name="$waresAmount" exact="$XenonStation.cargo.{$ware}.count" />
+						<set_value name="$maxWaresAmount" exact="$XenonStation.cargo.{$ware}.target" />
+						<!-- refill xenon shipyard/wharf storage -->
+						<set_value name="$needwares" operation="add" exact="1"/>	
+						<set_value name="$needed" exact="($maxWaresAmount-$waresAmount)"/>
+						<add_cargo object="$XenonStation" ware="$ware" exact="$needed"/>		
+						<debug_text text="'xenonBuff Completed :' + $XenonStation.name + ' added ' + $needed + ' of ' + $ware"/>						
+					</do_all>
+					
+					<remove_value name="$ware"/>
+					<remove_value name="$needwares"/>
+					<remove_value name="$waresAmount"/>
+					<remove_value name="$maxWaresAmount"/>
+				</do_if>
+			</actions>
+		</library>
+	
+		<library name="AddAllyFleet" purpose="run_actions">
+			<params>
+				<param name="Target"/>
+				<param name="OtherTarget"/>
+			</params>
+			<actions>
+				<debug_text text="'xenonBuff - adding allies to attack ' + $Target"/>
+				<do_any>
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+					<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+				</do_any>
+				<create_ship name="$fleetLeader" macro="$FleetLeaderMacro" sector="player.sector">
+					<owner exact="faction.invasionally"/>
+					<loadout>
+					  <level min="0.8" max="1"/>
+					</loadout>
+					<pilot>
+						<select faction="faction.argon" tags="tag.aipilot"/>
+					</pilot>
+					<safepos object="player.ship" radius="1km" min="3km" max="5km"/>
+				</create_ship>
+				<debug_text text="'xenonBuff - ally fleet leader ' + $fleetLeader"/>
+				<set_skill entity="$fleetLeader.pilot" type="skilltype.piloting" exact="10" />
+				<set_skill entity="$fleetLeader.pilot" type="skilltype.engineering" exact="5" />
+				<create_order id="'Attack'" object="$fleetLeader" immediate="true" override="true">
+					<param name="primarytarget" value="$Target"/>
+					<param name="secondarytargets" value="$OtherTarget"/>
+					<param name="allowothertargets" value="false"/>
+					<param name="pursuetargets" value="true"/>
+					<param name="checkrelation" value="false"/>
+				</create_order>				
+				<add_to_group groupname="$AllyFleet" object="$fleetLeader"/>
+				<do_all min="6" max="12" counter="$k">
+					<do_any>
+						<set_value name="$fleetShipMacro" exact="macro.ship_spl_m_frigate_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_ter_m_frigate_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_par_m_frigate_01_b_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_tel_m_frigate_01_b_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_arg_m_frigate_01_b_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_spl_m_corvette_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_ter_m_corvette_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_par_m_corvette_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_heavyfighter_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_heavyfighter_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_par_s_heavyfighter_01_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_heavyfighter_02_a_macro" />
+						<set_value name="$fleetShipMacro" exact="macro.ship_tel_s_fighter_01_a_macro" />
+					</do_any>
+					<create_ship name="$fleetShip" macro="$fleetShipMacro" sector="player.sector">
+						<owner exact="faction.invasionally"/>
+						<loadout>
+						  <level min="0.6" max="0.8"/>
+						</loadout>
+						<pilot>
+							<select faction="faction.argon" tags="tag.aipilot"/>
+						</pilot>
+						<safepos object="$fleetLeader" radius="1km" min="3km" max="5km"/>
+					</create_ship>
+					<set_skill entity="$fleetShip.pilot" type="skilltype.piloting" exact="10" />
+					<set_skill entity="$fleetShip.pilot" type="skilltype.engineering" exact="5" />
+					<create_order object="$fleetShip" id="'Escort'" default="true">
+                      <param name="target" value="$fleetLeader"/>
+					</create_order>
+					<add_to_group groupname="$AllyFleet" object="$fleetShip"/>
+				</do_all>
+				<return value="$AllyFleet" />
+			</actions>
+		</library>
+		
+		<!-- Kill Fleet Mission -->
+		<cue name="kill_invasion_fleet">
+			<conditions>
+				<event_cue_signalled />
+			</conditions>
+			<actions>
+				<set_value name="$InvaderWave" exact="@event.param.{1}"/>
+				<set_value name="$InvasionTarget" exact="@event.param.{2}"/>
+				<set_value name="$InvadingSector" exact="@event.param.{3}"/>
+				<set_value name="$InvaderShip" exact="@event.param.{4}"/>
+				<set_value name="$AllyFleet" exact="null"/>
+				<set_value name="$AllyFleetSummoned" exact="0"/>
+				<!-- Create reward -->
+				<set_value name="$RewardCr" min="1000000Cr" max="2000000Cr"/>				
+				<do_any>
+					<set_value name="$AdditionalReward" exact="ware.modpart_enginefuelinjector_t3" />
+					<set_value name="$AdditionalReward" exact="ware.modpart_shieldgeneratorcoil_t3" />
+					<set_value name="$AdditionalReward" exact="ware.modpart_shipnanoweave_t3" />
+					<set_value name="$AdditionalReward" exact="ware.modpart_weaponchamber_t3" />
+				</do_any>
+				
+				<do_if value="$AdditionalReward != null">
+				  <set_value name="$RewardObj" exact="$AdditionalReward"/>
+				  <set_value name="$RewardText" exact="$RewardObj.name"/>
+				</do_if>
+				<create_mission cue="this" name="'Invasion fleet'" description="'An enemy Invasion Fleet comming from ' + $InvadingSector.name + ' seems to target assets in ' + $InvasionTarget.sector.name + '. It will wreak havoc on everything it encounters along the way. Millions will die if this menace is not dealt with immediately. Several factions are calling for aid. Are you up to the challenge?.'" abortable="false" difficulty="level.hard" faction="faction.player" type="missiontype.destroy" reward="$RewardCr" rewardtext="$RewardText">
+				  <briefing>
+					<objective step="1" action="objective.defeat" group="$InvaderWave" text="'Enemy Invasion Fleet'"/>
+				  </briefing>
+				  <objective step="1" action="objective.defeat" group="$InvaderWave"/>
+				</create_mission>			
+				<set_objective cue="this" step="1" action="objective.defeat" text="'Enemy Invasion Fleet'" group="$InvaderWave"/>
+			</actions>
+			<cues>
+				<cue name="invasion_fleet_engage_event">
+					<conditions>
+						<check_any>
+							<event_object_changed_zone object="player.entity" />
+							<event_object_changed_zone object="$InvaderShip" />
+						</check_any>						
+						<check_value value="player.ship != null"/>
+						<check_value value="player.sector == $InvaderShip.sector"/>						
+					</conditions>
+					<delay exact="6s"/>
+					<actions>
+						<!-- faction.alliance -->
+						<do_if value="$AllyFleetSummoned != 1">
+							<set_value name="$AllyFleetSummoned" exact="1"/>
+							<run_actions ref="AddAllyFleet" result="$AllyFleet">
+								<param name="Target" value="$InvaderShip"/>
+								<param name="OtherTarget" value="$InvaderWave"/>
+							</run_actions>
+							<show_help custom="'Several factions put their differences aside and send us some aid. We are not alone in this fight.'" log="true" position="2" force="true" duration="7s"/>
+						</do_if>
+					</actions>
+                </cue>		
+				<cue name="invasion_fleet_invade_sector">
+					<conditions>
+						<event_object_changed_sector object="$InvaderShip"/>				
+					</conditions>
+					<delay exact="2s"/>
+					<actions>
+						<debug_text text="'xenonBuff - invader fleet leader changing sector ' + $InvaderShip"/>
+						<find_sector_in_range name="$sectorInAlert" object="$InvaderShip" maxdistance="0" multiple="false"/>						
+						<debug_text text="'xenonBuff - invader fleet flying over:' + $sectorInAlert.name"/>
+						<!-- teleport fleet subordinates to Fleet Leader -->
+						<do_all exact="$InvaderWave.count" counter="$i">
+							<do_if value="$InvaderWave.{$i}.name != $InvaderShip.name">
+								<warp object="$InvaderWave.{$i}" zone="$InvaderShip.zone">
+									<position object="$InvaderShip" min="1km" max="4km"/>
+								</warp>
+							</do_if>
+						</do_all>
+						
+						<do_if value="$sectorInAlert != null and $sectorInAlert.owner != faction.player and $sectorInAlert.owner != faction.ownerless and $sectorInAlert.owner != faction.xenon">
+							<add_faction_relation faction="faction.player" otherfaction="$sectorInAlert.owner" value="-0.005" reason="relationchangereason.attackedobject"/>
+							<set_value name="$alert" exact="'ALERT!!!\nXenon Invasion Fleet is rampaging over' + $sectorInAlert.name + '\nSector security is calling for aid.'"/>
+							<show_help custom="$alert" log="false" position="1" force="true" duration="5s"/>
+							<show_notification text="$alert" interaction="showonmap" object="$InvaderShip" sound="notification_warning" comment="Invasion Fleet changed sector" />	
+						</do_if>
+						<reset_cue cue="invasion_fleet_invade_sector"/>
+					</actions>
+                </cue>				
+				<cue name="invasion_fleet_destroyed">
+					<conditions>
+						<event_object_destroyed group="$InvaderWave"/>
+						<check_value value="$InvaderWave.count == 1"/>
+					</conditions>
+					<actions>
+						<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
+						<do_if value="$AllyFleet != null">
+							<destroy_group group="$AllyFleet" explosion="false"/>
+						</do_if>
+						<show_help custom="'Invasion Fleet has being defeated.'" log="false" position="2" force="true" duration="7s" comment="Mission accomplished"/>
+						<set_value name="$Header" exact="'\033G Invasion Fleet Defeated'"/>
+						<set_value name="$Body" exact="'\033W Commander, the \033Invasion Fleet \033Whas being defeated. The Gate Network is safe, for now.'"/>
+						<write_to_logbook title="$Header" text="$Body" category="tips"/>
+						
+						<set_value name="$Factions" exact="[faction.argon, faction.antigone, faction.ministry,faction.teladi, faction.paranid,faction.holyorder, faction.alliance, faction.hatikvah, faction.terran, faction.split, faction.loanshark, faction.freesplit, faction.pioneers, faction.fallensplit, faction.scavenger]" />
+						<do_all exact="$Factions.count" counter="$j">
+							<add_faction_relation faction="faction.player" otherfaction="$Factions.{$j}" value="0.003" reason="relationchangereason.missioncompleted" />
+						</do_all>
+						<!-- Rewards -->
+						<do_if value="$RewardCr">
+                            <reward_player money="$RewardCr" />
+                          </do_if>
+						<do_if value="$RewardObj">
+							<do_if value="$RewardObj.isinventory">
+								<add_inventory entity="player.entity" ware="$RewardObj" />
+								<show_notification text="$RewardText" sound="notification_achievement" comment="Item received" />
+							</do_if>
+						</do_if>
+						<reset_cue cue="kill_invasion_fleet"/>
+					</actions>
+                </cue>
+			</cues>
+		</cue>
+	</cues>
+</mdscript>
