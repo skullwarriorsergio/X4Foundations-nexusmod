@@ -3,7 +3,15 @@
   <faction id="invasionally" name="Gate Network Defenders" description="Gate Network Defenders Joint Force" shortname="DEF" prefixname="GND" behaviourset="default" known="1" tags="protective" policefaction="player">
     <color r="155" g="255" b="155" />
     <icon active="faction_visitor" inactive="faction_visitor" />
-    <relations>
+	<licences>
+		<licence type="capitalequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="generaluseequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="militaryequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="capitalship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="generaluseship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="militaryship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+	</licences>
+    <relations locked="1">	
       <relation faction="player" relation="1" />
       <relation faction="khaak" relation="-1" />
       <relation faction="alliance" relation="1" />
@@ -30,13 +38,27 @@
 	  <relation faction="yaki" relation="1" />
 	  <relation faction="loanshark" relation="1" />
 	  <relation faction="scavenger" relation="1" />
+	  <relation faction="mindlessmercenaries " relation="-1" />
     </relations>
+
+	<signals>
+      <response signal="policehalt" response="attack" />
+    </signals>
   </faction>
   <faction id="mindlessmercenaries" name="Zealot Merceneries" description="A group of zealot mercenaries in a crusade against all factions" shortname="MRC" prefixname="MSM" behaviourset="default" known="1" tags="aggressive notradeoffer">
     <color r="255" g="0" b="0" />
     <icon active="faction_visitor" inactive="faction_visitor" />
-    <relations>	  
+	<licences>
+		<licence type="capitalequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="generaluseequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="militaryequipment" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="capitalship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="generaluseship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+		<licence type="militaryship" factions="paranid teladi argon trinity buccaneers terran split holyorder pioneers freesplit court" />
+	</licences>
+    <relations locked="1"> 
 	  <relation faction="alliance" relation="-1" />
+	  <relation faction="invasionally" relation="-1" />
       <relation faction="antigone" relation="-1" />
       <relation faction="argon" relation="-1" />
       <relation faction="buccaneers" relation="-1" />
@@ -63,5 +85,8 @@
 	  <relation faction="loanshark" relation="-1" />
 	  <relation faction="scavenger" relation="-1" />
     </relations>
+	<signals>
+      <response signal="policehalt" response="attack" />
+    </signals>
   </faction>
 </factions>

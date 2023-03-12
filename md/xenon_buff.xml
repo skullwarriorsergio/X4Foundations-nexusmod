@@ -6,6 +6,12 @@
 				<check_age min="96h"/>
 			</conditions>
 			<actions>
+			
+			<!-- TESTING only - Activate immediate invasion
+			<set_value name="player.entity.$XenonBuffedDelta" exact="0s"/>
+			<set_value name="player.entity.$LastTimeXenonBuffed" exact="player.age"/>
+			<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
+			-->
 						
 				<debug_text text="'xenonBuff - Get Invasion Status ' + @player.entity.$XenonBuffedInvasion"/>
 				<debug_text text="'xenonBuff - Timer: Delta: ' + @player.entity.$XenonBuffedDelta"/>
@@ -181,9 +187,9 @@
 		-->		
 		<library name="CalculateInvaderFleetPower" purpose="run_actions">
 			<actions>
-				<set_value name="$CarrierCount" min="0" max="2"/>
+				<set_value name="$CarrierCount" min="1" max="3"/>
 				<set_value name="$DestroyerCount" min="1" max="3"/>
-				<set_value name="$FrigateCount" min="1" max="4"/>
+				<set_value name="$FrigateCount" min="2" max="5"/>
 				<set_value name="$FigtherCount" min="1" max="3"/>
 				<debug_text text="'xenonBuff - invasion power calculated'"/>
 				<return value="[$CarrierCount, $DestroyerCount,$FrigateCount, $FigtherCount]" />
@@ -245,15 +251,11 @@
 
 					<do_if value="$InvaderShip">
 						<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
-						<!-- Finding Invasion Targets -->
-						<set_value name="$InvasionTarget" exact="player.ship"/>
-						<set_value name="$InvasionOtherTargets" exact="player.ship"/>
 						<!-- Set invader ship orders -->
-						<create_order id="'Attack'" object="$InvaderShip" immediate="true" override="true">
-							<param name="primarytarget" value="$InvasionTarget"/>
-							<param name="secondarytargets" value="[$InvasionOtherTargets]"/>
-							<param name="pursuetargets" value="true"/>
-							<param name="checkrelation" value="false"/>
+						<create_position name="$targetsectorpos" space="$InvasionTarget.sector" value="$InvasionTarget.position" object="$InvasionTarget.zone"/>
+						<create_order id="'AttackInRange'" object="$InvaderShip">
+						  <param name="destination" value="[$InvasionTarget.sector, $targetsectorpos]"/>
+						  <param name="radius" value="150km"/>
 						</create_order>
 						<!-- Create Invasion Fleet subordinates -->
 						<do_all exact="$DestroyerCount" counter="$j">
@@ -267,10 +269,8 @@
 								</pilot>
 								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order object="$shipDestroEscort" id="'Escort'" default="true">
-								<param name="target" value="$InvaderShip"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="1000m"/>
+							<create_order id="'Escort'" object="$shipDestroEscort" default="true">
+							  <param name="target" value="$InvaderShip"/>
 							</create_order>
 							<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
 							<do_all exact="$FrigateCount" counter="$k">
@@ -284,11 +284,9 @@
 										</pilot>
 										<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
 									</create_ship>
-									<create_order object="$shipFrig" id="'Escort'" default="true">
-										<param name="target" value="$shipDestroEscort"/>
-										<param name="formation" value="formationshape.pointguard"/>
-										<param name="formationparam" value="200m"/>
-										<param name="pursuedistance" value="$shipDestroEscort.maxradarrange" />
+									<create_order id="'Escort'" object="$shipFrig" default="true">
+									  <param name="target" value="$shipDestroEscort"/>
+									  <param name="pursuedistance" value="15km"/>									  
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
 										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
@@ -301,11 +299,9 @@
 											</pilot>
 											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 										</create_ship>
-										<create_order object="$shipSmall" id="'Escort'" default="true">
-											<param name="target" value="$shipFrig"/>
-											<param name="formation" value="formationshape.pointguard"/>
-											<param name="pursuedistance" value="$shipFrig.maxradarrange" />
-											<param name="formationparam" value="200m"/>
+										<create_order id="'Escort'" object="$shipSmall" default="true">
+										  <param name="target" value="$shipFrig"/>
+										  <param name="pursuedistance" value="15km"/>	
 										</create_order>
 										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
 										<remove_value name="$shipSmall"/>	
@@ -326,11 +322,9 @@
 								</pilot>
 								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order object="$shipCarrier" id="'Escort'" default="true">
-								<param name="target" value="$InvaderShip"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="1000m"/>
-								<param name="pursuedistance" value="$InvaderShip.maxradarrange" />
+							<create_order id="'Escort'" object="$shipCarrier" default="true">
+							  <param name="target" value="$InvaderShip"/>
+							  <param name="pursuedistance" value="15km"/>	
 							</create_order>
 							<!-- Add subordinates -->
 							<do_all exact="$DestroyerCount" counter="$j">
@@ -344,13 +338,12 @@
 									</pilot>
 									<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
 								</create_ship>
-								<create_order object="$shipDestro" id="'Escort'" default="true">
-									<param name="target" value="$shipCarrier"/>
-									<param name="formation" value="formationshape.pointguard"/>
-									<param name="formationparam" value="1000m"/>
-									<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+								<create_order id="'Escort'" object="$shipDestro" default="true">
+								  <param name="target" value="$shipCarrier"/>
+								  <param name="pursuedistance" value="15km"/>	
 								</create_order>
-								<do_all exact="$FrigateCount" counter="$k">
+								<set_value name="$FrigateCountTotal" exact="$FrigateCount * 2"/>
+								<do_all exact="$FrigateCountTotal" counter="$k">
 									<create_ship name="$shipFrig" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$InvadingSector">
 										<owner exact="faction.xenon"/>
 										<loadout>
@@ -361,11 +354,9 @@
 										</pilot>
 										<safepos object="$shipDestro" radius="1km" min="1km" max="5km"/>
 									</create_ship>
-									<create_order object="$shipFrig" id="'Escort'" default="true">
-										<param name="target" value="$shipDestro"/>
-										<param name="formation" value="formationshape.pointguard"/>
-										<param name="formationparam" value="200m"/>
-										<param name="pursuedistance" value="$shipDestro.maxradarrange" />
+									<create_order id="'Escort'" object="$shipFrig" default="true">
+									  <param name="target" value="$shipDestro"/>
+									  <param name="pursuedistance" value="15km"/>	
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
 										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
@@ -378,11 +369,9 @@
 											</pilot>
 											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 										</create_ship>
-										<create_order object="$shipSmall" id="'Escort'" default="true">
-											<param name="target" value="$shipFrig"/>
-											<param name="formation" value="formationshape.pointguard"/>
-											<param name="pursuedistance" value="$shipFrig.maxradarrange" />
-											<param name="formationparam" value="200m"/>
+										<create_order id="'Escort'" object="$shipSmall" default="true">
+										  <param name="target" value="$shipFrig"/>
+										  <param name="pursuedistance" value="25km"/>	
 										</create_order>
 										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
 										<remove_value name="$shipSmall"/>	
@@ -444,27 +433,56 @@
 				</create_ship>
 
 				<do_if value="$InvaderShip">
+					<!-- Add resupplier ship -->
+					<do_any>
+						<set_value name="$FleetRessMacro" exact="macro.ship_par_xl_resupplier_02_a_macro" />
+						<set_value name="$FleetRessMacro" exact="macro.ship_ter_xl_resupplier_01_a_macro" />
+						<set_value name="$FleetRessMacro" exact="macro.ship_spl_xl_resupplier_01_a_macro" />
+						<set_value name="$FleetRessMacro" exact="macro.ship_tel_xl_resupplier_01_a_macro" />
+						<set_value name="$FleetRessMacro" exact="macro.ship_arg_xl_resupplier_01_a_macro" />
+					</do_any>
+					<create_ship name="$shipRessEscort" macro="$FleetRessMacro" capturable="false" sector="$InvadingSector">
+						<owner exact="faction.mindlessmercenaries"/>
+						<loadout>
+						  <level exact="1"/>
+						</loadout>
+						<pilot>
+						  <select faction="faction.argon" tags="[tag.commander]"/>
+						</pilot>
+						<safepos object="$InvaderShip" radius="8km" min="4km" max="10km"/>
+					</create_ship>
+					<create_order id="'SupplyFleet'" object="$shipRessEscort" default="true">
+						<param name="target" value="$InvaderShip"/>
+						<param name="formation" value="formationshape.pointguard"/>
+						<param name="overrideformationskill" value="true"/>
+					</create_order>
+					<add_cargo object="$shipRessEscort" ware="ware.advancedelectronics" min="10" max="12" />
+					<add_cargo object="$shipRessEscort" ware="ware.advancedcomposites" min="100" max="120" />
+					<add_cargo object="$shipRessEscort" ware="ware.energycells" min="3000" max="4200" />
+					<add_cargo object="$shipRessEscort" ware="ware.hullparts" min="1" max="2" />
+					<add_cargo object="$shipRessEscort" ware="ware.dronecomponents" min="30" max="36" />
+					<add_cargo object="$shipRessEscort" ware="ware.weaponcomponents" min="2" max="4" />
+					<add_cargo object="$shipRessEscort" ware="ware.scanningarrays" min="10" max="12" />
+					<add_cargo object="$shipRessEscort" ware="ware.smartchips" min="2000" max="2800" />
+					<add_cargo object="$shipRessEscort" ware="ware.missilecomponents" min="1000" max="1800" />
+				
 					<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
-					<!-- Finding Invasion Targets -->
-					<set_value name="$InvasionTarget" exact="player.ship"/>
-					<set_value name="$InvasionOtherTargets" exact="player.ship"/>
-					<!-- Set invader ship orders -->
-					<create_order id="'Attack'" object="$InvaderShip" immediate="true" override="true">
-						<param name="primarytarget" value="$InvasionTarget"/>
-						<param name="secondarytargets" value="[$InvasionOtherTargets]"/>
-						<param name="pursuetargets" value="true"/>
-						<param name="checkrelation" value="false"/>
+					<!-- Set invader ship orders -->					
+					<create_position name="$targetsectorpos" space="$InvasionTarget.sector" value="$InvasionTarget.position" object="$InvasionTarget.zone"/>
+					<create_order id="'AttackInRange'" object="$InvaderShip">
+					  <param name="destination" value="[$InvasionTarget.sector, $targetsectorpos]"/>
+					  <param name="radius" value="150km"/>
 					</create_order>
 					<!-- Create Invasion Fleet subordinates -->
 					<do_all exact="$DestroyerCount" counter="$j">
 						<do_any>
-							<set_value name="$FleetDestMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
-							<set_value name="$FleetDestMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
-							<set_value name="$FleetDestMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
-							<set_value name="$FleetDestMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
-							<set_value name="$FleetDestMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+							<set_value name="$DestroyerMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+							<set_value name="$DestroyerMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+							<set_value name="$DestroyerMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+							<set_value name="$DestroyerMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+							<set_value name="$DestroyerMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
 						</do_any>
-						<create_ship name="$shipDestroEscort" macro="$FleetDestMacro" capturable="false" sector="$InvadingSector">
+						<create_ship name="$shipDestroEscort" macro="$DestroyerMacro" capturable="false" sector="$InvadingSector">
 							<owner exact="faction.mindlessmercenaries"/>
 							<loadout>
 							  <level exact="1"/>
@@ -474,10 +492,9 @@
 							</pilot>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 						</create_ship>
-						<create_order object="$shipDestroEscort" id="'Escort'" default="true">
-							<param name="target" value="$InvaderShip"/>
-							<param name="formation" value="formationshape.pointguard"/>
-							<param name="formationparam" value="1000m"/>
+						<create_order id="'Escort'" object="$shipDestroEscort" default="true">
+						  <param name="target" value="$InvaderShip"/>
+						  <param name="pursuedistance" value="25km"/>
 						</create_order>
 						<debug_text text="'xenonBuff - destroyer created:' + $shipDestroEscort"/>
 						<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
@@ -501,12 +518,10 @@
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
 								<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
-							</create_ship>								
-							<create_order object="$shipFrig" id="'Escort'" default="true">
-								<param name="target" value="$shipDestroEscort"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="200m"/>
-								<param name="pursuedistance" value="$shipDestroEscort.maxradarrange" />
+							</create_ship>
+							<create_order id="'Escort'" object="$shipFrig" default="true">
+							  <param name="target" value="$shipDestroEscort"/>
+							  <param name="pursuedistance" value="25km"/>	
 							</create_order>
 							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>
 							<do_all exact="$FigtherCount" counter="$l">
@@ -528,11 +543,9 @@
 									</pilot>
 									<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 								</create_ship>
-								<create_order object="$shipSmall" id="'Escort'" default="true">
-									<param name="target" value="$shipFrig"/>
-									<param name="formation" value="formationshape.pointguard"/>
-									<param name="pursuedistance" value="$shipFrig.maxradarrange" />
-									<param name="formationparam" value="200m"/>
+								<create_order id="'Escort'" object="$shipSmall" default="true">
+								  <param name="target" value="$shipFrig"/>
+								  <param name="pursuedistance" value="25km"/>
 								</create_order>
 								<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
 								<add_to_group groupname="$AttackWave" object="$shipSmall"/>
@@ -560,12 +573,10 @@
 							  <select faction="faction.argon" tags="[tag.commander]"/>
 							</pilot>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
-						</create_ship>						
-						<create_order object="$shipCarrier" id="'Escort'" default="true">
-							<param name="target" value="$InvaderShip"/>
-							<param name="formation" value="formationshape.pointguard"/>
-							<param name="formationparam" value="1000m"/>
-							<param name="pursuedistance" value="$InvaderShip.maxradarrange" />
+						</create_ship>
+						<create_order id="'Escort'" object="$shipCarrier" default="true">
+						  <param name="target" value="$InvaderShip"/>
+						  <param name="pursuedistance" value="25km"/>	
 						</create_order>
 						<debug_text text="'xenonBuff - carrier created:' + $shipCarrier"/>
 						<!-- Add subordinates -->
@@ -587,11 +598,9 @@
 								</pilot>
 								<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order object="$shipDestro" id="'Escort'" default="true">
-								<param name="target" value="$shipCarrier"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="1000m"/>
-								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+							<create_order id="'Escort'" object="$shipDestro" default="true">
+							  <param name="target" value="$shipCarrier"/>
+							  <param name="pursuedistance" value="25km"/>
 							</create_order>
 							<debug_text text="'xenonBuff - destroyer created:' + $shipDestro"/>							
 							<add_to_group groupname="$AttackWave" object="$shipDestro"/>
@@ -621,12 +630,10 @@
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
-							</create_ship>								
-							<create_order object="$shipFrig" id="'Escort'" default="true">
-								<param name="target" value="$shipCarrier"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="200m"/>
-								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
+							</create_ship>
+							<create_order id="'Escort'" object="$shipFrig" default="true">
+							  <param name="target" value="$shipCarrier"/>
+							  <param name="pursuedistance" value="25km"/>
 							</create_order>
 							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>							
 							<add_to_group groupname="$AttackWave" object="$shipFrig"/>
@@ -659,11 +666,9 @@
 								</pilot>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
 							</create_ship>
-							<create_order object="$shipSmall" id="'Escort'" default="true">
-								<param name="target" value="$shipCarrier"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="pursuedistance" value="$shipCarrier.maxradarrange" />
-								<param name="formationparam" value="200m"/>
+							<create_order id="'Escort'" object="$shipSmall" default="true">
+							  <param name="target" value="$shipCarrier"/>
+							  <param name="pursuedistance" value="15km"/>
 							</create_order>
 							<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
 							<add_to_group groupname="$AttackWave" object="$shipSmall"/>
@@ -939,7 +944,7 @@
 					<param name="checkrelation" value="false"/>
 				</create_order>				
 				<add_to_group groupname="$AllyFleet" object="$fleetLeader"/>
-				<do_all min="6" max="12" counter="$k">
+				<do_all min="8" max="12" counter="$k">
 					<do_any>
 						<set_value name="$fleetShipMacro" exact="macro.ship_spl_m_frigate_01_a_macro" />
 						<set_value name="$fleetShipMacro" exact="macro.ship_ter_m_frigate_01_a_macro" />
@@ -1059,7 +1064,23 @@
 						</do_if>
 						<reset_cue cue="invasion_fleet_invade_sector"/>
 					</actions>
-                </cue>				
+                </cue>	
+				<cue name="invasion_leader_destroyed">
+					<conditions>
+						<event_object_destroyed object="$InvaderShip"/>
+					</conditions>
+					<actions>
+						<create_position name="$targetsectorpos" space="$InvasionTarget.sector" value="$InvasionTarget.position" object="$InvasionTarget.zone"/>
+						<do_all exact="$InvaderWave.count" counter="$i">
+							<do_if value="$InvaderWave.{$i}.isclass.[class.ship_l, class.ship_xl]">
+								<create_order id="'AttackInRange'" object="$InvaderWave.{$i}">
+								  <param name="destination" value="[$InvasionTarget.sector, $targetsectorpos]"/>
+								  <param name="radius" value="150km"/>
+								</create_order>
+							</do_if>
+						</do_all>
+					</actions>
+				</cue>					
 				<cue name="invasion_fleet_destroyed">
 					<conditions>
 						<event_object_destroyed group="$InvaderWave"/>
