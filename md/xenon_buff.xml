@@ -7,7 +7,8 @@
 			</conditions>
 			<actions>
 			
-			<!-- TESTING only - Activate immediate invasion
+			<!-- TESTING only - Activate immediate invasion -->
+			<!--
 			<set_value name="player.entity.$XenonBuffedDelta" exact="0s"/>
 			<set_value name="player.entity.$LastTimeXenonBuffed" exact="player.age"/>
 			<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
@@ -248,7 +249,6 @@
 					<do_else>
 						<debug_text text="'xenonBuff - Invader fleet already exists somehow.'"/>
 					</do_else>
-
 					<do_if value="$InvaderShip">
 						<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
 						<!-- Set invader ship orders -->
@@ -269,8 +269,10 @@
 								</pilot>
 								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipDestroEscort" default="true">
-							  <param name="target" value="$InvaderShip"/>
+							<create_order id="'AssignCommander'" object="$shipDestroEscort" immediate="true">
+							  <param name="commander" value="$InvaderShip"/>
+							  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
 							<do_all exact="$FrigateCount" counter="$k">
@@ -284,9 +286,10 @@
 										</pilot>
 										<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
 									</create_ship>
-									<create_order id="'Escort'" object="$shipFrig" default="true">
-									  <param name="target" value="$shipDestroEscort"/>
-									  <param name="pursuedistance" value="15km"/>									  
+									<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
+									  <param name="commander" value="$shipDestroEscort"/>
+									  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+									  <param name="cancelorders" value="true"/>
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
 										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
@@ -299,9 +302,10 @@
 											</pilot>
 											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 										</create_ship>
-										<create_order id="'Escort'" object="$shipSmall" default="true">
-										  <param name="target" value="$shipFrig"/>
-										  <param name="pursuedistance" value="15km"/>	
+										<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
+										  <param name="commander" value="$shipFrig"/>
+										  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+										  <param name="cancelorders" value="true"/>
 										</create_order>
 										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
 										<remove_value name="$shipSmall"/>	
@@ -322,9 +326,10 @@
 								</pilot>
 								<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipCarrier" default="true">
-							  <param name="target" value="$InvaderShip"/>
-							  <param name="pursuedistance" value="15km"/>	
+							<create_order id="'AssignCommander'" object="$shipCarrier" immediate="true">
+							  <param name="commander" value="$InvaderShip"/>
+							  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<!-- Add subordinates -->
 							<do_all exact="$DestroyerCount" counter="$j">
@@ -338,9 +343,10 @@
 									</pilot>
 									<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
 								</create_ship>
-								<create_order id="'Escort'" object="$shipDestro" default="true">
-								  <param name="target" value="$shipCarrier"/>
-								  <param name="pursuedistance" value="15km"/>	
+								<create_order id="'AssignCommander'" object="$shipDestro" immediate="true">
+								  <param name="commander" value="$shipCarrier"/>
+								  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+								  <param name="cancelorders" value="true"/>
 								</create_order>
 								<set_value name="$FrigateCountTotal" exact="$FrigateCount * 2"/>
 								<do_all exact="$FrigateCountTotal" counter="$k">
@@ -354,9 +360,10 @@
 										</pilot>
 										<safepos object="$shipDestro" radius="1km" min="1km" max="5km"/>
 									</create_ship>
-									<create_order id="'Escort'" object="$shipFrig" default="true">
-									  <param name="target" value="$shipDestro"/>
-									  <param name="pursuedistance" value="15km"/>	
+									<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
+									  <param name="commander" value="$shipDestro"/>
+									  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+									  <param name="cancelorders" value="true"/>
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
 										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
@@ -369,9 +376,10 @@
 											</pilot>
 											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 										</create_ship>
-										<create_order id="'Escort'" object="$shipSmall" default="true">
-										  <param name="target" value="$shipFrig"/>
-										  <param name="pursuedistance" value="25km"/>	
+										<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
+										  <param name="commander" value="$shipFrig"/>
+										  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+										  <param name="cancelorders" value="true"/>
 										</create_order>
 										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
 										<remove_value name="$shipSmall"/>	
@@ -386,6 +394,77 @@
 							<remove_value name="$shipCarrier"/>							
 						</do_all>
 					</do_if>						
+				</do_if>
+				<return value="[$InvaderShip ,$AttackWave]" />
+				<remove_value name="$InvadingShipJob"/>
+				<remove_value name="$InvadingSectorCenter"/>
+			</actions>
+		</library>
+		
+		<library name="CreateKhaakInvaderFleet" purpose="run_actions">
+			<params>
+				<param name="InvadingSector"/>
+				<param name="InvasionTarget"/>
+				<param name="InvasionOtherTargets"/>
+				<param name="DestroyerCount"/>
+				<param name="CarrierCount"/>
+				<param name="FrigateCount"/>
+				<param name="FigtherCount"/>
+			</params>
+			<actions>
+				<debug_text text="'xenonBuff - Processing for Khaak invader fleet on: ' + $InvadingSector.name"/>
+				
+				<set_value name="$InvaderShip" exact="null"/>
+				<set_value name="$InvadingSectorCenter" exact="$InvadingSector.coreposition"/>
+				<set_value name="$mmacro" exact="macro.ship_kha_m_fighter_01_a_macro"/>
+				<create_ship name="$InvaderShip" sector="$InvadingSector">
+				  <select faction="faction.khaak" size="class.ship_m"/>
+				  <owner exact="faction.khaak"/>
+				  <pilot>
+					  <select faction="faction.khaak" tags="tag.aipilot"/>
+					</pilot>
+				  <safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="200km" min="180km" max="250km"/>
+				</create_ship>
+				<do_if value="$InvaderShip">
+					<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
+					<!-- Set invader ship orders -->					
+					<create_position name="$targetsectorpos" space="$InvasionTarget.sector" value="$InvasionTarget.position" object="$InvasionTarget.zone"/>
+					<create_order id="'AttackInRange'" object="$InvaderShip">
+					  <param name="destination" value="[$InvasionTarget.sector, $targetsectorpos]"/>
+					  <param name="radius" value="150km"/>
+					</create_order>
+					<set_value name="$mcount" exact="($CarrierCount + 1 + $DestroyerCount + 1 + $FrigateCount + 1) * 2"/>					
+					<do_all exact="$mcount" counter="$k">					
+						<create_ship name="$shipMEscort" sector="$InvadingSector">
+						  <select faction="faction.khaak" size="class.ship_m"/>
+						  <owner exact="faction.khaak"/>
+						  <pilot>
+							  <select faction="faction.khaak" tags="tag.aipilot"/>
+							</pilot>`
+						  <safepos object="$InvaderShip" radius="2km" min="2km" max="6km"/>
+						</create_ship>
+						<create_order id="'Escort'" object="$shipMEscort" default="true">
+						  <param name="target" value="$InvaderShip"/>
+						  <param name="pursuedistance" value="15km"/>
+						</create_order>
+						<add_to_group groupname="$AttackWave" object="$shipMEscort"/>
+						<set_value name="$scount" exact="($CarrierCount) + ($DestroyerCount) + ($FrigateCount) + ($FigtherCountS)"/>		
+						<do_all exact="$scount" counter="$j">
+							<create_ship name="$shipSEscort" sector="$InvadingSector">
+							  <select faction="faction.khaak" size="class.ship_s"/>
+							  <owner exact="faction.khaak"/>
+							  <pilot>
+								  <select faction="faction.khaak" tags="tag.aipilot"/>
+								</pilot>
+							  <safepos object="$shipMEscort" radius="2km" min="2km" max="6km"/>
+							</create_ship>
+							<create_order id="'Escort'" object="$shipSEscort" default="true">
+							  <param name="target" value="$shipMEscort"/>
+							  <param name="pursuedistance" value="15km"/>
+							</create_order>
+							<add_to_group groupname="$AttackWave" object="$shipSEscort"/>
+						</do_all>
+					</do_all>					
 				</do_if>
 				<return value="[$InvaderShip ,$AttackWave]" />
 				<remove_value name="$InvadingShipJob"/>
@@ -491,10 +570,11 @@
 							  <select faction="faction.argon" tags="[tag.commander]"/>
 							</pilot>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
-						</create_ship>
-						<create_order id="'Escort'" object="$shipDestroEscort" default="true">
-						  <param name="target" value="$InvaderShip"/>
-						  <param name="pursuedistance" value="25km"/>
+						</create_ship>						
+						<create_order id="'AssignCommander'" object="$shipDestroEscort" immediate="true">
+						  <param name="commander" value="$InvaderShip"/>
+						  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+						  <param name="cancelorders" value="true"/>
 						</create_order>
 						<debug_text text="'xenonBuff - destroyer created:' + $shipDestroEscort"/>
 						<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>
@@ -519,9 +599,10 @@
 								</pilot>
 								<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipFrig" default="true">
-							  <param name="target" value="$shipDestroEscort"/>
-							  <param name="pursuedistance" value="25km"/>	
+							<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
+							  <param name="commander" value="$shipDestroEscort"/>
+							  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>
 							<do_all exact="$FigtherCount" counter="$l">
@@ -543,9 +624,10 @@
 									</pilot>
 									<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 								</create_ship>
-								<create_order id="'Escort'" object="$shipSmall" default="true">
-								  <param name="target" value="$shipFrig"/>
-								  <param name="pursuedistance" value="25km"/>
+								<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
+								  <param name="commander" value="$shipFrig"/>
+								  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+								  <param name="cancelorders" value="true"/>
 								</create_order>
 								<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
 								<add_to_group groupname="$AttackWave" object="$shipSmall"/>
@@ -574,9 +656,10 @@
 							</pilot>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 						</create_ship>
-						<create_order id="'Escort'" object="$shipCarrier" default="true">
-						  <param name="target" value="$InvaderShip"/>
-						  <param name="pursuedistance" value="25km"/>	
+						<create_order id="'AssignCommander'" object="$shipCarrier" immediate="true">
+						  <param name="commander" value="$InvaderShip"/>
+						  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+						  <param name="cancelorders" value="true"/>
 						</create_order>
 						<debug_text text="'xenonBuff - carrier created:' + $shipCarrier"/>
 						<!-- Add subordinates -->
@@ -598,9 +681,10 @@
 								</pilot>
 								<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipDestro" default="true">
-							  <param name="target" value="$shipCarrier"/>
-							  <param name="pursuedistance" value="25km"/>
+							<create_order id="'AssignCommander'" object="$shipDestro" immediate="true">
+							  <param name="commander" value="$shipCarrier"/>
+							  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<debug_text text="'xenonBuff - destroyer created:' + $shipDestro"/>							
 							<add_to_group groupname="$AttackWave" object="$shipDestro"/>
@@ -608,7 +692,7 @@
 						</do_all>
 						<set_value name="$escortCount" exact="$FrigateCount * 2"/>
 						<do_if value="$DestroyerCount ge 1">
-							<set_value name="$escortCount" exact="$DestroyerCount * $FrigateCount"/>
+							<set_value name="$escortCount" exact="$DestroyerCount * $escortCount"/>
 						</do_if>						
 						<do_all exact="$escortCount" counter="$k">
 							<do_any>
@@ -631,9 +715,10 @@
 								</pilot>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipFrig" default="true">
-							  <param name="target" value="$shipCarrier"/>
-							  <param name="pursuedistance" value="25km"/>
+							<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
+							  <param name="commander" value="$shipCarrier"/>
+							  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<debug_text text="'xenonBuff - frigate created:' + $shipFrig"/>							
 							<add_to_group groupname="$AttackWave" object="$shipFrig"/>
@@ -642,7 +727,7 @@
 						<remove_value name="$escortCount"/>
 						<set_value name="$escortCount" exact="$FigtherCount * 2"/>
 						<do_if value="$DestroyerCount ge 1">
-							<set_value name="$escortCount" exact="$DestroyerCount * $FrigateCount"/>
+							<set_value name="$escortCount" exact="$DestroyerCount * $escortCount"/>
 						</do_if>
 						<do_if value="$FrigateCount ge 1">
 							<set_value name="$escortCount" exact="$FrigateCount * $escortCount"/>
@@ -666,9 +751,10 @@
 								</pilot>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
 							</create_ship>
-							<create_order id="'Escort'" object="$shipSmall" default="true">
-							  <param name="target" value="$shipCarrier"/>
-							  <param name="pursuedistance" value="15km"/>
+							<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
+							  <param name="commander" value="$shipCarrier"/>
+							  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+							  <param name="cancelorders" value="true"/>
 							</create_order>
 							<debug_text text="'xenonBuff - figther created:' + $shipSmall"/>
 							<add_to_group groupname="$AttackWave" object="$shipSmall"/>
@@ -724,9 +810,9 @@
 				<set_value name="$FigtherCount" exact="$FleetPower.{4}"/>
 				<!-- Creating the fleet -->
 				<debug_text text="'xenonBuff - Setting fleet type'"/>
-				<set_value name="$fleetType" min="0" max="4"/>
-				<do_if value="$fleetType ge 3">
-					<run_actions ref="CreateXenonInvaderFleet" result="$targets">
+				<set_value name="$fleetType" min="0" max="5"/>				
+				<do_if value="$fleetType ge 5">
+					<run_actions ref="CreateKhaakInvaderFleet" result="$targets">
 						<param name="InvadingSector" value="$InvadingSector"/>
 						<param name="InvasionTarget" value="$InvasionTarget"/>
 						<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
@@ -737,17 +823,29 @@
 					</run_actions>
 				</do_if>
 				<do_else>
-					<run_actions ref="CreateRegularInvaderFleet" result="$targets">
-						<param name="InvadingSector" value="$InvadingSector"/>
-						<param name="InvasionTarget" value="$InvasionTarget"/>
-						<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
-						<param name="DestroyerCount" value="$DestroyerCount"/>
-						<param name="CarrierCount" value="$CarrierCount"/>
-						<param name="FrigateCount" value="$FrigateCount"/>
-						<param name="FigtherCount" value="$FigtherCount"/>
-					</run_actions>
+					<do_if value="$fleetType ge 3">
+						<run_actions ref="CreateXenonInvaderFleet" result="$targets">
+							<param name="InvadingSector" value="$InvadingSector"/>
+							<param name="InvasionTarget" value="$InvasionTarget"/>
+							<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
+							<param name="DestroyerCount" value="$DestroyerCount"/>
+							<param name="CarrierCount" value="$CarrierCount"/>
+							<param name="FrigateCount" value="$FrigateCount"/>
+							<param name="FigtherCount" value="$FigtherCount"/>
+						</run_actions>
+					</do_if>
+					<do_else>
+						<run_actions ref="CreateRegularInvaderFleet" result="$targets">
+							<param name="InvadingSector" value="$InvadingSector"/>
+							<param name="InvasionTarget" value="$InvasionTarget"/>
+							<param name="InvasionOtherTargets" value="$InvasionOtherTargets"/>
+							<param name="DestroyerCount" value="$DestroyerCount"/>
+							<param name="CarrierCount" value="$CarrierCount"/>
+							<param name="FrigateCount" value="$FrigateCount"/>
+							<param name="FigtherCount" value="$FigtherCount"/>
+						</run_actions>
+					</do_else>
 				</do_else>
-				
 				<set_value name="$InvaderShip" exact="$targets.{1}"/>
 				<set_value name="$AttackWave" exact="$targets.{2}"/>
 				
@@ -933,11 +1031,15 @@
 					</pilot>
 					<safepos object="player.ship" radius="1km" min="3km" max="5km"/>
 				</create_ship>
+				<add_effect object="$fleetLeader.zone" effect="'jump_jumpin_capship'">
+				  <position value="$fleetLeader.position"/>
+				  <rotation value="$fleetLeader.rotation"/>
+				</add_effect>
 				<debug_text text="'xenonBuff - ally fleet leader ' + $fleetLeader"/>
 				<set_skill entity="$fleetLeader.pilot" type="skilltype.piloting" exact="10" />
 				<set_skill entity="$fleetLeader.pilot" type="skilltype.engineering" exact="5" />
 				<create_order id="'Attack'" object="$fleetLeader" immediate="true" override="true">
-					<param name="primarytarget" value="$Target"/>
+					<param name="primarytarget" value="$OtherTarget.random"/>
 					<param name="secondarytargets" value="$OtherTarget"/>
 					<param name="allowothertargets" value="false"/>
 					<param name="pursuetargets" value="true"/>
@@ -971,11 +1073,17 @@
 						</pilot>
 						<safepos object="$fleetLeader" radius="1km" min="3km" max="5km"/>
 					</create_ship>
+					<add_effect object="$fleetShip.zone" effect="'jump_jumpin_capship'">
+					  <position value="$fleetShip.position"/>
+					  <rotation value="$fleetShip.rotation"/>
+					</add_effect>
 					<set_skill entity="$fleetShip.pilot" type="skilltype.piloting" exact="10" />
 					<set_skill entity="$fleetShip.pilot" type="skilltype.engineering" exact="5" />
-					<create_order object="$fleetShip" id="'Escort'" default="true">
-                      <param name="target" value="$fleetLeader"/>
-					</create_order>
+					<create_order id="'AssignCommander'" object="$fleetShip" immediate="true">
+                      <param name="commander" value="$fleetLeader"/>
+                      <param name="assignment" value="[assignment.interception, assignment.defence].random"/>
+                      <param name="cancelorders" value="true"/>
+                    </create_order>
 					<add_to_group groupname="$AllyFleet" object="$fleetShip"/>
 				</do_all>
 				<return value="$AllyFleet" />
@@ -1046,13 +1154,19 @@
 					<actions>
 						<debug_text text="'xenonBuff - invader fleet leader changing sector ' + $InvaderShip"/>
 						<find_sector_in_range name="$sectorInAlert" object="$InvaderShip" maxdistance="0" multiple="false"/>						
-						<debug_text text="'xenonBuff - invader fleet flying over:' + $sectorInAlert.name"/>
+						<debug_text text="'xenonBuff - invader fleet flying over:' + $sectorInAlert.name + '. Teleporting fleet'"/>
 						<!-- teleport fleet subordinates to Fleet Leader -->
+						<!-- <debug_text text="'xenonBuff - invader fleet to be teleported: ' + $InvaderWave"/> -->
 						<do_all exact="$InvaderWave.count" counter="$i">
 							<do_if value="$InvaderWave.{$i}.name != $InvaderShip.name">
 								<warp object="$InvaderWave.{$i}" zone="$InvaderShip.zone">
 									<position object="$InvaderShip" min="1km" max="4km"/>
 								</warp>
+								<!-- <debug_text text="'xenonBuff - invader fleet - ' + $InvaderWave.{$i}.name + ' teleported'" /> -->
+								<add_effect object="$InvaderWave.{$i}.zone" effect="'jump_jumpin_capship'">
+								  <position value="$InvaderWave.{$i}.position"/>
+								  <rotation value="$InvaderWave.{$i}.rotation"/>
+								</add_effect>
 							</do_if>
 						</do_all>
 						
