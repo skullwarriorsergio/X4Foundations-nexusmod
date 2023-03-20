@@ -2,6 +2,6 @@
 
 <diff>
   <add sel="//deployable/macros">
-    <macro category="satellite" mk="0" macro="xenon_psi_emitter_macro"/>
+	<macro category="satellite" mk="0" macro="xenon_psi_emitter_macro"/>
   </add>
 </diff>

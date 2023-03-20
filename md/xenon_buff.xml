@@ -3,7 +3,7 @@
 	<cues>
 		<cue name="XenonBuff" instantiate="true" checkinterval="5min" checktime="player.age + 25s">
 			<conditions>
-				<check_age min="96h"/>
+				<check_age min="120h"/>
 			</conditions>
 			<actions>
 			
@@ -292,7 +292,7 @@
 									  <param name="cancelorders" value="true"/>
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
-										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
+										<create_ship name="$shipSmall" macro="[macro.ship_xen_s_fighter_02_a_macro, macro.ship_xen_s_fighter_01_a_macro].random" sector="$InvadingSector">
 											<owner exact="faction.xenon"/>
 											<loadout>
 											  <level exact="1"/>
@@ -366,7 +366,7 @@
 									  <param name="cancelorders" value="true"/>
 									</create_order>
 									<do_all exact="$FigtherCount" counter="$l">
-										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$InvadingSector">
+										<create_ship name="$shipSmall" macro="[macro.ship_xen_s_fighter_02_a_macro, macro.ship_xen_s_fighter_01_a_macro].random" sector="$InvadingSector">
 											<owner exact="faction.xenon"/>
 											<loadout>
 											  <level exact="1"/>
@@ -609,10 +609,25 @@
 								<do_any>
 									<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_heavyfighter_01_a_macro" />
 									<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_02_a_macro" />
 									<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_heavyfighter_01_a_macro" />
 									<set_value name="$fleetShipMacro" exact="macro.ship_par_s_heavyfighter_01_a_macro" />
 									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_heavyfighter_02_a_macro" />
 									<set_value name="$fleetShipMacro" exact="macro.ship_tel_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_02_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_03_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_yak_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_fighter_02_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_02_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_03_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_04_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_fighter_02_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_par_s_fighter_01_a_macro" />
+									<set_value name="$fleetShipMacro" exact="macro.ship_par_s_fighter_02_a_macro" />
 								</do_any>
 								<create_ship name="$shipSmall" macro="$fleetShipMacro" capturable="false" sector="$InvadingSector">
 									<owner exact="faction.mindlessmercenaries"/>
@@ -736,10 +751,25 @@
 							<do_any>
 								<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_heavyfighter_01_a_macro" />
 								<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_heavyfighter_02_a_macro" />
 								<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_heavyfighter_01_a_macro" />
 								<set_value name="$fleetShipMacro" exact="macro.ship_par_s_heavyfighter_01_a_macro" />
 								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_heavyfighter_02_a_macro" />
 								<set_value name="$fleetShipMacro" exact="macro.ship_tel_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_02_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_03_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_yak_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_ter_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_spl_s_fighter_02_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_02_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_03_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_arg_s_fighter_04_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_pir_s_fighter_02_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_par_s_fighter_01_a_macro" />
+								<set_value name="$fleetShipMacro" exact="macro.ship_par_s_fighter_02_a_macro" />
 							</do_any>
 							<create_ship name="$shipSmall" macro="$fleetShipMacro" capturable="false" sector="$InvadingSector">
 								<owner exact="faction.mindlessmercenaries"/>
@@ -929,7 +959,7 @@
 											<param name="pursuedistance" value="$NewShip.maxradarrange" />
 										</create_order>
 										<do_all exact="3" counter="$l">
-											<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$Sector">
+											<create_ship name="$shipSmall" macro="[macro.ship_xen_s_fighter_02_a_macro, macro.ship_xen_s_fighter_01_a_macro].random" sector="$Sector">
 												<owner exact="faction.xenon"/>
 												<loadout>
 												  <level exact="1"/>
@@ -1203,6 +1233,12 @@
 					<actions>
 						<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
 						<do_if value="$AllyFleet != null">
+							<do_all exact="$AllyFleet.count" counter="$i">
+								<add_effect object="$InvaderWave.{$i}.zone" effect="'jump_jumpin_capship'">
+								  <position value="$InvaderWave.{$i}.position"/>
+								  <rotation value="$InvaderWave.{$i}.rotation"/>
+								</add_effect>
+							</do_all>							
 							<destroy_group group="$AllyFleet" explosion="false"/>
 						</do_if>
 						<show_help custom="'Invasion Fleet has being defeated.'" log="false" position="2" force="true" duration="7s" comment="Mission accomplished"/>

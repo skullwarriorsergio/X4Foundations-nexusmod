@@ -1,321 +1,243 @@
 <?xml version="1.0" encoding="utf-8"?>
-<mdscript name="XenonPsiEmitter" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="E:\Modding\xsds\comb\md.xsd">
+<mdscript name="XenonPsiEmitter" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
   <cues>
-    <cue name="XSE_Main">
+	<cue name="EmitterDetected" instantiate="true" checktime="player.age + 15s">
 		<conditions>
-			<check_any>
-				<event_cue_signalled cue="md.Setup.GameStart" />
-				<event_player_created/>
-				<event_cue_signalled/>
-			</check_any>
+			<event_object_changed_zone object="player.entity" />
+			<check_value value="player.ship != null"/>
+		</conditions>
+		<delay exact="3s"/>
+		<actions>
+			<find_object groupname="$emittersInSector" space="player.ship.sector" owner="faction.xenon"  multiple="true">
+			  <match_any>
+				<match macro="macro.xenon_psi_emitter_macro"/>
+			  </match_any>
+			</find_object>
+			<do_if value="$emittersInSector.count gt 0">
+				<show_help custom="'A signal with xenon signature has been detected pulsating in this sector.'" log="false" position="3" force="true" duration="5s"/>
+				<set_value name="$Header" exact="'\033R Xenon Psi Emitter detected'"/>
+				<set_value name="$Body" exact="'\033WLong-range sensors have detected Xenon Psi Emitters somewhere in \033G' + player.ship.sector.name +'\033W You should destroy them before they pose a serious threat.'"/>
+				<show_notification text="$Header + '\n' + $Body" timeout="10s" priority="1" comment="Emitter found"/>
+				<write_to_logbook title="$Header" text="$Body" category="alerts"/>
+				<remove_value name="$Header"/>
+				<remove_value name="$Body"/>
+				<reset_cue cue="this"/>
+			</do_if>
+			<remove_value name="$emittersInSector"/>
+		</actions>
+	</cue>
+    <cue name="XPE_Main" instantiate="true" checkinterval="20min" checktime="player.age + 25s">
+		<conditions>
+			<check_age min="96h"/>
 		</conditions>
 		<actions>
-            <set_value name="$blueprintsToAdd" exact="[ware.xenon_psi_emitter_mk1]"/>
-            <do_all exact="$blueprintsToAdd.count" counter="$i">
-				<do_if value="not player.blueprints.{$blueprintsToAdd.{$i}}.any.exists">
-					<add_blueprints wares="$blueprintsToAdd.{$i}"/>
-				</do_if>
-            </do_all>
-            <remove_value name="$blueprintsToAdd"/>
-		</actions>
-		<cues>
-			<cue name="XSE_Main_EmitterDeployed" instantiate="true">
-				  <conditions>
-					<event_satellite_launched space="player.galaxy"/>
-					<check_value value="event.param2.isplayerowned"/>
-				  </conditions>
-				  <delay exact="2s"/>
-				<actions>
-					<debug_text text="'xenonBuff Emitters deployed'"/>
-					<do_if value="@player.entity.$XenonBuffedCustomInvasion == 1">
-						<signal_cue_instantly cue="XSE_Main_FleetAlreadySummoned"/>
-					</do_if>
-					<do_else>
-						<do_if value="event.param2.macro == macro.xenon_psi_emitter_macro">		
-							<debug_text text="'xenonBuff emitter position' + event.param2.sector"/>
-							<!-- Spawn Enemy Fleet -->
-							<do_if value="player.age ge 96h">
-								<set_value name="$EventSector" exact="event.param2.sector"/>							
-								<do_if value="$EventSector.owner == faction.ownerless or $EventSector.owner == faction.player">
-									<set_value name="player.entity.$XenonBuffedCustomInvasion" exact="1"/>	
-									<signal_cue_instantly cue="XSE_Main_FleetIncomming"/>
-									<debug_text text="'xenonBuff Spawning Xenon Fleet'"/>
-									<!-- Calculate fleet power -->
-									<run_actions ref="md.xenonbuff.CalculateInvaderFleetPower" result="$FleetPower"/>
-									<set_value name="$CarrierCount" exact="$FleetPower.{1}"/>
-									<set_value name="$DestroyerCount" exact="$FleetPower.{2}"/>
-									<set_value name="$FrigateCount" exact="$FleetPower.{3}"/>
-									<set_value name="$FigtherCount" exact="$FleetPower.{4}"/>
-																
-									<!-- Creating the fleet -->
-									<include_actions ref="CreateStrikeForce"/>					
-									<!-- Add notification and mission only if the invasion fleet was successfully created -->
-									<do_if value="$StrikeForceLeader">
-										<debug_text text="'xenonBuff -strike force group:' + $AttackWave"/>
-										<run_actions ref="NotifyAndAddMission">
-											<param name="AttackWave" value="$AttackWave"/>
-											<param name="StrikeForceTarget" value="$StrikeForceTarget"/>
-											<param name="StrikeForceLeader" value="$StrikeForceLeader"/>
-											<param name="EventSector" value="$EventSector"/>
-										</run_actions>
-									</do_if>
-									<do_else>
-										<set_value name="player.entity.$XenonBuffedCustomInvasion" exact="0"/>
-									</do_else>
-								</do_if>
-								<do_else>
-									<signal_cue_instantly cue="XSE_Main_WrongPlace"/>
-								</do_else>
-							</do_if>
-							<do_else>
-								<signal_cue_instantly cue="XSE_Main_NotYet"/>
-							</do_else>
-							<!-- -->
-							<play_sound object="event.param2" sound="'anim_jumpdrive_l_activation'" />
-						</do_if>  
-					</do_else>  
-					<!-- Remove Emitters -->
-					<signal_cue_instantly cue="XSE_Main_CleanUpEmitters"/>
-				</actions>
-			</cue>
-			
-			<!-- Defining Fleet -->
-			<library name="CreateStrikeForce">
-				<actions>
-					<debug_text text="'xenonBuff - Creating Strike Force on: ' + $EventSector.name"/>
-					<set_value name="$StrikeForceLeader" exact="null"/>
-					<set_value name="$EventSectorCenter" exact="$EventSector.coreposition"/>
-					<create_ship name="$StrikeForceLeader" macro="macro.ship_xen_xl_carrier_01_a_macro" sector="$EventSector">
-						<owner exact="faction.xenon"/>
-						<loadout>
-						  <level exact="1"/>
-						</loadout>
-						<pilot>
-						  <select faction="faction.xenon" tags="[tag.commander]"/>
-						</pilot>
-						<safepos object="player.ship" radius="80km" min="70km" max="100km"/>
-					</create_ship>
-					<do_if value="$StrikeForceLeader">
-						<add_to_group groupname="$AttackWave" object="$StrikeForceLeader"/>
-						<!-- Finding Invasion Targets -->
-						<set_value name="$StrikeForceTarget" exact="player.ship"/>
-						<set_value name="$StrikeForceOtherTargets" exact="player.ship"/>
-						<!-- Set invader ship orders -->
-						<create_order id="'Attack'" object="$StrikeForceLeader" immediate="true" override="true">
-							<param name="primarytarget" value="$StrikeForceTarget"/>
-							<param name="secondarytargets" value="[$StrikeForceOtherTargets]"/>
-							<param name="allowothertargets" value="false"/>
-							<param name="pursuetargets" value="true"/>
-							<param name="checkrelation" value="false"/>
-						</create_order>
-						<!-- Create Invasion Fleet subordinates -->
-						<do_all min="$DestroyerCount" max="$DestroyerCount + 1" counter="$j">
-							<create_ship name="$shipDestroEscort" macro="macro.ship_xen_xl_destroyer_01_a_macro" sector="$EventSector">
-								<owner exact="faction.xenon"/>
-								<loadout>
-								  <level exact="1"/>
-								</loadout>
-								<pilot>
-								  <select faction="faction.xenon" tags="[tag.commander]"/>
-								</pilot>
-								<safepos object="$StrikeForceLeader" radius="3km" min="3km" max="10km"/>
-							</create_ship>
-							<create_order object="$shipDestroEscort" id="'Escort'" default="true">
-								<param name="target" value="$StrikeForceLeader"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="1000m"/>
-							</create_order>
-							<add_to_group groupname="$AttackWave" object="$shipDestroEscort"/>	
-							<remove_value name="$shipDestroEscort"/>													
-						</do_all>	
-						<do_all min="$CarrierCount" max="$CarrierCount + 2" counter="$i">
-							<create_ship name="$shipCarrier" macro="macro.ship_xen_xl_carrier_01_a_macro" sector="$EventSector">
-								<owner exact="faction.xenon"/>
-								<loadout>
-								  <level exact="1"/>
-								</loadout>
-								<pilot>
-								  <select faction="faction.xenon" tags="[tag.commander]"/>
-								</pilot>
-								<safepos object="$StrikeForceLeader" radius="3km" min="3km" max="10km"/>
-							</create_ship>
-							<create_order object="$shipCarrier" id="'Escort'" default="true">
-								<param name="target" value="$StrikeForceLeader"/>
-								<param name="formation" value="formationshape.pointguard"/>
-								<param name="formationparam" value="1000m"/>
-							</create_order>
-							<!-- Add subordinates -->
-							<do_all min="$DestroyerCount" max="$DestroyerCount + 2"  counter="$j">
-								<create_ship name="$shipDestro" macro="macro.ship_xen_xl_destroyer_01_a_macro" sector="$EventSector">
-									<owner exact="faction.xenon"/>
-									<loadout>
-									  <level exact="1"/>
-									</loadout>
-									<pilot>
-									  <select faction="faction.xenon" tags="[tag.commander]"/>
-									</pilot>
-									<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
-								</create_ship>
-								<create_order object="$shipDestro" id="'Escort'" default="true">
-									<param name="target" value="$shipCarrier"/>
-									<param name="formation" value="formationshape.pointguard"/>
-									<param name="formationparam" value="1000m"/>
-								</create_order>
-								<do_all min="$FrigateCount" max="$FrigateCount + 4" counter="$k">
-									<create_ship name="$shipFrig" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$EventSector">
-										<owner exact="faction.xenon"/>
-										<loadout>
-										  <level exact="1"/>
-										</loadout>
-										<pilot>
-										  <select faction="faction.xenon" tags="[tag.commander]"/>
-										</pilot>
-										<safepos object="$shipDestro" radius="1km" min="1km" max="5km"/>
-									</create_ship>
-									<create_order object="$shipFrig" id="'Escort'" default="true">
-										<param name="target" value="$shipDestro"/>
-										<param name="formation" value="formationshape.pointguard"/>
-										<param name="formationparam" value="200m"/>
-									</create_order>
-									<do_all min="$FigtherCount" max="$FigtherCount + 6" counter="$l">
-										<create_ship name="$shipSmall" macro="macro.ship_xen_s_fighter_02_a_macro" sector="$EventSector">
-											<owner exact="faction.xenon"/>
-											<loadout>
-											  <level exact="1"/>
-											</loadout>
-											<pilot>
-											  <select faction="faction.xenon" tags="[tag.commander]"/>
-											</pilot>
-											<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
-										</create_ship>
-										<create_order object="$shipSmall" id="'Escort'" default="true">
-											<param name="target" value="$shipFrig"/>
-											<param name="formation" value="formationshape.pointguard"/>
-											<param name="formationparam" value="200m"/>
-										</create_order>
-										<add_to_group groupname="$AttackWave" object="$shipSmall"/>
-										<remove_value name="$shipSmall"/>	
-									</do_all>
-									<add_to_group groupname="$AttackWave" object="$shipFrig"/>
-									<remove_value name="$shipFrig"/>
-								</do_all>
-								<add_to_group groupname="$AttackWave" object="$shipDestro"/>
-								<remove_value name="$shipDestro"/>
-							</do_all>							
-							<add_to_group groupname="$AttackWave" object="$shipCarrier"/>
-							<remove_value name="$shipCarrier"/>							
-						</do_all>					
-					</do_if>
-					<remove_value name="$InvadingShipJob"/>
-					<remove_value name="$EventSectorCenter"/>
-				</actions>
-			</library>
-			
-			<cue name="XSE_Main_CleanUpEmitters" instantiate="true">
-				<conditions>
-					<event_cue_signalled/>
-				</conditions>
-				<delay exact="5s"/>
-				<actions>
-					<debug_text text="'xenonBuff removing Emitters'"/>
-					<find_object groupname="$emittersToDie" owner="faction.player" functional="true" multiple="true" space="player.galaxy">
-					<match_any>
-						<match macro="macro.xenon_psi_emitter_macro"/>
-					</match_any>
-					</find_object>
-					<do_if value="$emittersToDie.count">
-						<destroy_group group="$emittersToDie" explosion="false"/>
-					</do_if>
-					<remove_value name="$emittersToDie"/>
-					<debug_text text="'xenonBuff removing Emitters - Done'"/>
-				</actions>
-			</cue>
-			
-			<cue name="XSE_Main_FleetIncomming" instantiate="true">
-				<conditions>
-					<event_cue_signalled/>
-				</conditions>
-				<delay exact="4s"/>
-				<actions>
-					<show_help duration="10s" log="true" position="1" force="true" custom="'Xenon Psi Emitter deployed, enemy fleet inbound. Brace yourself.'"/>
-				</actions>
-			</cue>
-			
-			<cue name="XSE_Main_FleetAlreadySummoned" instantiate="true">
-				<conditions>
-					<event_cue_signalled/>
-				</conditions>
-				<delay exact="4s"/>
-				<actions>
-					<show_help duration="10s" log="false" position="2" force="true" custom="'Xenon fleet already inbound.'"/>
-				</actions>
-			</cue>
 		
-			<cue name="XSE_Main_NotYet" instantiate="true">
-				<conditions>
-					<event_cue_signalled/>
-				</conditions>
-				<delay exact="4s"/>
-				<actions>
-					<show_help duration="10s" log="false" position="1" force="true" custom="'The Xenon considers you an insignificant being. Try later (4days in-game)'"/>
-				</actions>
-			</cue>
-			
-			<cue name="XSE_Main_WrongPlace" instantiate="true">
-				<conditions>
-					<event_cue_signalled/>
-				</conditions>
-				<delay exact="3s"/>
-				<actions>
-					<show_help duration="10s" log="true" position="1" force="true" custom="'Defense Modules radio frequency jamming system is blocking psi emitter transmission. Try on non-faction-owned sectors.'"/>
-				</actions>
-			</cue>
-			
-			<!-- Kill Fleet Mission -->
-			<cue name="XSE_kill_strike_force" instantiate="true">
-				<conditions>
-					<event_cue_signalled />
-				</conditions>
-				<actions>
-					<set_value name="$InvaderWave" exact="@event.param"/>	
-					<create_mission cue="this" name="'Xenon Strike Force'" description="'Destroy Xenon Strike Force'" abortable="false" difficulty="level.hard" faction="faction.player" type="missiontype.destroy">
-					  <briefing>
-						<objective step="1" action="objective.defeat" group="$InvaderWave" text="'Destroy Xenon Strike Force'"/>
-					  </briefing>
-					  <objective step="1" action="objective.defeat" group="$InvaderWave"/>
-					</create_mission>
-					<set_objective cue="this" step="1" action="objective.defeat" text="'Destroy Xenon Strike Force'" group="$InvaderWave"/>
-				</actions>
-				<cues>
-					<cue name="invasion_fleet_destroyed">
-						<conditions>
-							<event_object_destroyed group="$InvaderWave"/>
-							<check_value value="$InvaderWave.count == 1"/>
-						</conditions>
-						<actions>
-							<set_value name="player.entity.$XenonBuffedCustomInvasion" exact="0"/>
-							<show_help custom="'Xenon Strike Force has being defeated.'" log="false" position="2" force="true" duration="7s" comment="Mission accomplished"/>
-							<reset_cue cue="kill_invasion_fleet"/>
-						</actions>
-					</cue>
-				</cues>
-			</cue>
-			
-			<!-- Notify player and add mission to destroy the invasion fleet -->
-			<library name="NotifyAndAddMission" purpose="run_actions">
-				<params>
-					<param name="AttackWave"/>
-					<param name="StrikeForceTarget"/>
-					<param name="StrikeForceLeader"/>
-					<param name="EventSector"/>
-				</params>
-				<actions>
-					<debug_text text="'xenonBuff - strike force: init notification and mission'"/>								
-					<signal_cue_instantly cue="XSE_kill_strike_force" param="$AttackWave"/>
-					<debug_text text="'xenonBuff - mission created'"/>
-				</actions>
-			</library>
-		</cues>
+			<!--
+			<find_object owner="faction.xenon" functional="true" groupname="$sat" space="player.galaxy">
+                <match_any>
+                  <match macro="macro.xenon_psi_emitter_macro"/>
+                </match_any>
+            </find_object>
+			<destroy_group group="$sat" explosion="false"/>
+			-->
+		
+			<debug_text text="'xenonBuff - Emitter: Last run: ' + @player.entity.$LastTimeEmitter"/>
+			<do_if value="@player.entity.$LastTimeEmitter == null">
+				<set_value name="player.entity.$LastTimeEmitter" exact="player.age"/>
+				<debug_text text="'xenonBuff - Emitters: Setting time counter for first time'"/>				
+			</do_if>
+			<!-- do_if value="player.age ge (@player.entity.$LastTimeEmitter + 1h)" -->
+			<find_object groupname="$emitters" space="player.galaxy" owner="faction.xenon"  multiple="true">
+			  <match_any>
+				<match macro="macro.xenon_psi_emitter_macro"/>
+			  </match_any>
+			</find_object>
+			<do_if value="player.age ge (@player.entity.$LastTimeEmitter + 1h) or $emitters.count le 0">
+				<!-- Update timer -->				
+				<set_value name="player.entity.$LastTimeEmitter" exact="player.age"/>
+				<run_actions ref="CheckSpawnEmitter" result="$newEmitter">				
+					<params>
+						<param name="EmittersCount" value="@emitters.count"/>
+					</params>
+				</run_actions>
+				<do_if value="$newEmitter != null">
+					<add_to_group groupname="$emitters" object="$newEmitter"/>
+				</do_if>				
+			</do_if>
+			<!-- Trigger Emitter spawns -->
+			<signal_cue_instantly cue="trigger_emitters" param="[$emitters, $emitters.count]" />
+		</actions>
 	</cue>
+	
+	<library name="TestCheckSpawnEmitter" purpose="run_actions">
+		<params>
+			<param name="EmittersCount" default="0"/>
+		</params>
+		<actions>
+			<set_value name="$chance" min="0" max="10"/>
+			<do_if value="$chance le 10 and $chance gt $EmittersCount">
+				<!-- Select Sector to Spawn -->
+				<set_value name="$choosenSector" exact="player.ship.sector"/>
+				<debug_text text="'xenonBuff - Emiter: Spawn Emitter in ' + $choosenSector.name"/>
+				<!-- Deploy Emitter -->
+				<set_value name="$deltaX" min="-5km" max="5km"/>
+				<set_value name="$deltaZ" min="-5km" max="5km"/>
+				<set_value name="$choosenSectorCenter" exact="position.[player.ship.position.x, player.ship.position.y, player.ship.position.z]" />
+				
+				<create_object name="$TargetSatellite" macro="macro.xenon_psi_emitter_macro" owner="faction.xenon" sector="$choosenSector">
+				  <safepos x="$choosenSectorCenter.x + $deltaX" y="$choosenSectorCenter.y" z="$choosenSectorCenter.z + $deltaZ" radius="10km" min="4km" max="10km"/>
+				</create_object>
+				<return value="$TargetSatellite" />
+			</do_if>
+		</actions>
+	</library>
+	
+	<library name="CheckSpawnEmitter" purpose="run_actions">
+		<params>
+			<param name="EmittersCount" default="0"/>
+		</params>
+		<actions>
+			<set_value name="$chance" min="0" max="10"/>
+			<do_if value="$chance le 10 and $chance gt $EmittersCount">
+				<!-- Select Sector to Spawn -->
+				<find_sector name="$AllSectors" multiple="true">
+				  <match owner="faction.xenon" negate="true" />
+				</find_sector>
+				<set_value name="$choosenSector" exact="$AllSectors.random" />
+				<debug_text text="'xenonBuff - Emiter: Spawn Emitter in ' + $choosenSector.name"/>
+				<!-- Deploy Emitter -->
+				<set_value name="$deltaX" min="-100km" max="100km"/>
+				<set_value name="$deltaZ" min="-100km" max="100km"/>
+				<set_value name="$choosenSectorCenter" exact="$choosenSector.coreposition"/>
+				<create_object name="$TargetSatellite" macro="macro.xenon_psi_emitter_macro" owner="faction.xenon" sector="$choosenSector">
+				  <safepos x="$choosenSectorCenter.x + $deltaX" y="$choosenSectorCenter.y" z="$choosenSectorCenter.z + $deltaZ" radius="40km" min="10km" max="40km"/>
+				</create_object>
+				<return value="$TargetSatellite" />
+			</do_if>
+		</actions>
+	</library>
+	
+	<library name="CalculatePower" purpose="run_actions">
+		<params>
+			<param name="power" default="0"/>
+		</params>
+		<actions>
+			<set_value name="$CarrierCount" min="0" max="0"/>
+			<set_value name="$DestroyerCount" min="0" max="$power / 6"/>
+			<set_value name="$FrigateCount" min="0" max="$power / 3"/>
+			<set_value name="$FigtherCount" min="1" max="$power / 2"/>
+			<debug_text text="'xenonBuff - emitter spawn power calculated'"/>
+			<return value="[$CarrierCount, $DestroyerCount,$FrigateCount, $FigtherCount]" />
+		</actions>
+	</library>
+	
+	<library name="AddXenonAtkWave" purpose="run_actions">
+		<params>
+			<param name="ShipTypeCount"/>
+			<param name="Emitter"/>
+		</params>
+		<actions>
+			<set_value name="$CarrierCount" exact="$ShipTypeCount.{1}"/>
+			<set_value name="$DestroyerCount" exact="$ShipTypeCount.{2}"/>
+			<set_value name="$FrigateCount" exact="$ShipTypeCount.{3}"/>
+			<set_value name="$FigtherCount" exact="$ShipTypeCount.{4}"/>
+			<set_value name="$shipMacro" exact="[macro.ship_xen_s_fighter_02_a_macro, macro.ship_xen_s_fighter_01_a_macro].random" />
+			<do_if value="$DestroyerCount ge 1">
+				<set_value name="$shipMacro" exact="macro.ship_xen_xl_destroyer_01_a_macro" />
+			</do_if>
+			<do_else>
+				<do_if value="$FrigateCount ge 1">
+					<set_value name="$shipMacro" exact="macro.ship_xen_m_fighter_01_a_macro" />
+				</do_if>
+			</do_else>
+			<create_ship name="$leader" macro="$shipMacro" sector="$Emitter.sector">
+				<owner exact="faction.xenon"/>
+				<loadout>
+				  <level exact="1"/>
+				</loadout>
+				<pilot>
+				  <select faction="faction.xenon" tags="[tag.commander]"/>
+				</pilot>
+				<safepos object="$Emitter" radius="13km" min="10km" max="20km"/>
+			</create_ship>
+			<create_order id="'Patrol'" object="$leader" default="true">
+				<param name="space" value="$leader.sector"/>
+			</create_order>
+			<do_all exact="$FrigateCount" counter="$l">
+				<create_ship name="$mship" macro="macro.ship_xen_m_fighter_01_a_macro" sector="$Emitter.sector">
+					<owner exact="faction.xenon"/>
+					<loadout>
+					  <level exact="1"/>
+					</loadout>
+					<pilot>
+					  <select faction="faction.xenon" tags="[tag.commander]"/>
+					</pilot>
+					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
+				</create_ship>
+				<create_order id="'AssignCommander'" object="$mship" immediate="true">
+				  <param name="commander" value="$leader"/>
+				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+				  <param name="cancelorders" value="true"/>
+				</create_order>
+			</do_all>
+			<do_all exact="$FigtherCount" counter="$m">
+				<create_ship name="$sship" macro="[macro.ship_xen_s_fighter_02_a_macro, macro.ship_xen_s_fighter_01_a_macro].random" sector="$Emitter.sector">
+					<owner exact="faction.xenon"/>
+					<loadout>
+					  <level exact="1"/>
+					</loadout>
+					<pilot>
+					  <select faction="faction.xenon" tags="[tag.commander]"/>
+					</pilot>
+					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
+				</create_ship>
+				<create_order id="'AssignCommander'" object="$sship" immediate="true">
+				  <param name="commander" value="$leader"/>
+				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
+				  <param name="cancelorders" value="true"/>
+				</create_order>
+			</do_all>
+			<remove_value name="$CarrierCount"/>
+			<remove_value name="$DestroyerCount"/>
+			<remove_value name="$FrigateCount"/>
+			<remove_value name="$FigtherCount"/>
+			<remove_value name="$shipMacro"/>
+		</actions>
+	</library>
+
+	<cue name="trigger_emitters" instantiate="true">
+		<conditions>
+			<event_cue_signalled />
+		</conditions>
+		<actions>
+			<set_value name="$emitters" exact="@event.param.{1}"/>
+			<set_value name="$total" exact="@event.param.{2}"/>
+			<debug_text text="'xenonBuff - Emiter: triggering ' + $emitters + ' total: ' +$total"/>
+			<do_all exact="$total" counter="$i">
+				<signal_cue_instantly cue="trigger_emitters_spawn" param="[$emitters.{$i}, $total]"/>
+			</do_all>
+		</actions>
+	</cue>
+
+	<cue name="trigger_emitters_spawn" instantiate="true" namespace="this">
+		<conditions>
+			<event_cue_signalled/>
+		</conditions>
+		<delay min="1s" max="2s"/>
+		<actions>
+			<set_value name="$emitter" exact="event.param.{1}"/>
+			<set_value name="$total" exact="event.param.{2}"/>
+			<debug_text text="'xenonBuff - Emiter: Emitter triggered ' + $emitter.name + ' from total: ' +$total"/>
+			<!-- Spawn enemies -->
+			<run_actions ref="CalculatePower" result="$ShipTypeCount">
+				<param name="power" value="$total"/>
+			</run_actions>
+			<run_actions ref="AddXenonAtkWave">
+				<param name="ShipTypeCount" value="$ShipTypeCount"/>
+				<param name="Emitter" value="$emitter"/>
+			</run_actions>
+			<remove_value name="$emitter"/>
+		</actions>
+    </cue>
   </cues>
 </mdscript>
