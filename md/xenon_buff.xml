@@ -235,7 +235,7 @@
 					<request_job_ship name="$InvaderShip" job="$InvaderShipJob" requester="$InvadingSector"/>
 					<do_if value="$InvaderShip">
 						<spawn_waiting_job_ship ship="$InvaderShip" sector="$InvadingSector">
-						  <safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="1km" min="1km" max="7km"/>
+						  <safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="60km" min="60km" max="900km"/>
 						</spawn_waiting_job_ship>
 						<do_if value="$InvaderShip.exists">
 						  <debug_text text="'xenonBuff - Processing for protector fleet:' + $InvadingSector.name + ': ship created'"/>
@@ -484,8 +484,10 @@
 				<param name="FigtherCount"/>
 			</params>
 			<actions>
-				<debug_text text="'xenonBuff - Processing for regular invader fleet on: ' + $InvadingSector.name"/>
+				<set_value name="$shipNames" exact="['Halo','Galatea','Gladius','Karnack','Star Talon','Phoenix','Vespira','Cordoba','Enterprise','Defiance','Rebellion','Majestic','Conquistador','Vanquisher','Providence','Independence','Arcadian','The Watcher','Gallimimus','Shade','The Gladiator','Xerxes','Nostradamus','Phalanx','Praetor','Stalker','Claymore','Valhala','Arrow Flight','Euphoria','Apocalypse','Harlequin','Scythe','Nightfall','Duke','Saber','Caelestis','Blade']" />
 				
+				<debug_text text="'xenonBuff - Processing for regular invader fleet on: ' + $InvadingSector.name"/>				
+				<debug_text text="'xenonBuff - invader ships names:' + $shipNames"/>
 				<debug_text text="'xenonBuff - invader fleet destroyer:' + $DestroyerCount"/>
 				<debug_text text="'xenonBuff - invader fleet carrier:' + $CarrierCount"/>
 				<debug_text text="'xenonBuff - invader fleet frigate:' + $FrigateCount"/>
@@ -494,11 +496,26 @@
 				<set_value name="$InvaderShip" exact="null"/>
 				<set_value name="$InvadingSectorCenter" exact="$InvadingSector.coreposition"/>
 				<do_any>
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_spl_l_destroyer_01_a_macro" macros="[macro.weapon_spl_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_tel_l_destroyer_01_a_macro" macros="[macro.weapon_tel_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+						<generate_loadout macro="macro.ship_par_l_destroyer_02_a_macro" macros="[macro.weapon_par_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_ter_l_destroyer_01_a_macro" macros="[macro.weapon_ter_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_arg_l_destroyer_01_a_macro" macros="[macro.weapon_arg_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
 				</do_any>
 				<create_ship name="$InvaderShip" macro="$FleetLeaderMacro" capturable="false" sector="$InvadingSector">
 					<owner exact="faction.mindlessmercenaries"/>
@@ -508,9 +525,22 @@
 					<pilot>
 					  <select faction="faction.argon" tags="[tag.commander]"/>
 					</pilot>
+					<people>
+						<fillpercent exact="100" />
+						<person role="service" weight="50">
+							<select faction="faction.argon" tags="tag.crew"/>
+						</person>
+						<person role="marine" weight="50">
+							<select faction="faction.argon" tags="tag.marine"/>
+						</person>
+					</people>
+					<ammunition>
+						<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+					</ammunition>
 					<safepos x="$InvadingSectorCenter.x" y="$InvadingSectorCenter.y" z="$InvadingSectorCenter.z" radius="200km" min="180km" max="250km"/>
 				</create_ship>
-
+				<apply_loadout object="$InvaderShip" flags="weapons" loadout="$Loadouts.{1}"/>
+				<set_object_name object="$InvaderShip" name="'MRC ' + $shipNames.random"/>
 				<do_if value="$InvaderShip">
 					<!-- Add resupplier ship -->
 					<do_any>
@@ -528,8 +558,21 @@
 						<pilot>
 						  <select faction="faction.argon" tags="[tag.commander]"/>
 						</pilot>
+						<people>
+							<fillpercent exact="100" />
+							<person role="service" weight="50">
+								<select faction="faction.argon" tags="tag.crew"/>
+							</person>
+							<person role="marine" weight="50">
+								<select faction="faction.argon" tags="tag.marine"/>
+							</person>
+						</people>
+						<ammunition>
+							<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+						</ammunition>
 						<safepos object="$InvaderShip" radius="8km" min="4km" max="10km"/>
 					</create_ship>
+					<set_object_name object="$shipRessEscort" name="'MRC ' + $shipNames.random"/>
 					<create_order id="'SupplyFleet'" object="$shipRessEscort" default="true">
 						<param name="target" value="$InvaderShip"/>
 						<param name="formation" value="formationshape.pointguard"/>
@@ -546,6 +589,7 @@
 					<add_cargo object="$shipRessEscort" ware="ware.missilecomponents" min="1000" max="1800" />
 				
 					<add_to_group groupname="$AttackWave" object="$InvaderShip"/>
+					<add_to_group groupname="$AttackWave" object="$shipRessEscort"/>
 					<!-- Set invader ship orders -->					
 					<create_position name="$targetsectorpos" space="$InvasionTarget.sector" value="$InvasionTarget.position" object="$InvasionTarget.zone"/>
 					<create_order id="'AttackInRange'" object="$InvaderShip">
@@ -555,11 +599,26 @@
 					<!-- Create Invasion Fleet subordinates -->
 					<do_all exact="$DestroyerCount" counter="$j">
 						<do_any>
-							<set_value name="$DestroyerMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
-							<set_value name="$DestroyerMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
-							<set_value name="$DestroyerMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
-							<set_value name="$DestroyerMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
-							<set_value name="$DestroyerMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+							<do_all>
+								<set_value name="$DestroyerMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+								<generate_loadout macro="macro.ship_spl_l_destroyer_01_a_macro" macros="[macro.weapon_spl_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+							</do_all>
+							<do_all>
+								<set_value name="$DestroyerMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+								<generate_loadout macro="macro.ship_tel_l_destroyer_01_a_macro" macros="[macro.weapon_tel_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+							</do_all>
+							<do_all>
+								<set_value name="$DestroyerMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+								<generate_loadout macro="macro.ship_par_l_destroyer_02_a_macro" macros="[macro.weapon_par_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+							</do_all>
+							<do_all>
+								<set_value name="$DestroyerMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+								<generate_loadout macro="macro.ship_ter_l_destroyer_01_a_macro" macros="[macro.weapon_ter_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+							</do_all>
+							<do_all>
+								<set_value name="$DestroyerMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+								<generate_loadout macro="macro.ship_arg_l_destroyer_01_a_macro" macros="[macro.weapon_arg_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+							</do_all>
 						</do_any>
 						<create_ship name="$shipDestroEscort" macro="$DestroyerMacro" capturable="false" sector="$InvadingSector">
 							<owner exact="faction.mindlessmercenaries"/>
@@ -569,8 +628,22 @@
 							<pilot>
 							  <select faction="faction.argon" tags="[tag.commander]"/>
 							</pilot>
+							<people>
+								<fillpercent exact="100" />
+								<person role="service" weight="50">
+									<select faction="faction.argon" tags="tag.crew"/>
+								</person>
+								<person role="marine" weight="50">
+									<select faction="faction.argon" tags="tag.marine"/>
+								</person>
+							</people>
+							<ammunition>
+								<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+							</ammunition>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
-						</create_ship>						
+						</create_ship>
+						<apply_loadout object="$shipDestroEscort" flags="weapons" loadout="$Loadouts.{1}"/>
+						<set_object_name object="$shipDestroEscort" name="'MRC ' + $shipNames.random"/>						
 						<create_order id="'AssignCommander'" object="$shipDestroEscort" immediate="true">
 						  <param name="commander" value="$InvaderShip"/>
 						  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
@@ -597,6 +670,18 @@
 								<pilot>
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
+								<people>
+									<fillpercent exact="100" />
+									<person role="service" weight="50">
+										<select faction="faction.argon" tags="tag.crew"/>
+									</person>
+									<person role="marine" weight="50">
+										<select faction="faction.argon" tags="tag.marine"/>
+									</person>
+								</people>
+								<ammunition>
+									<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+								</ammunition>
 								<safepos object="$shipDestroEscort" radius="1km" min="1km" max="5km"/>
 							</create_ship>
 							<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
@@ -637,6 +722,18 @@
 									<pilot>
 									  <select faction="faction.argon" tags="[tag.commander]"/>
 									</pilot>
+									<people>
+										<fillpercent exact="100" />
+										<person role="service" weight="50">
+											<select faction="faction.argon" tags="tag.crew"/>
+										</person>
+										<person role="marine" weight="50">
+											<select faction="faction.argon" tags="tag.marine"/>
+										</person>
+									</people>
+									<ammunition>
+										<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+									</ammunition>
 									<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 								</create_ship>
 								<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
@@ -669,8 +766,21 @@
 							<pilot>
 							  <select faction="faction.argon" tags="[tag.commander]"/>
 							</pilot>
+							<people>
+								<fillpercent exact="100" />
+								<person role="service" weight="50">
+									<select faction="faction.argon" tags="tag.crew"/>
+								</person>
+								<person role="marine" weight="50">
+									<select faction="faction.argon" tags="tag.marine"/>
+								</person>
+							</people>
+							<ammunition>
+								<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+							</ammunition>
 							<safepos object="$InvaderShip" radius="3km" min="3km" max="10km"/>
 						</create_ship>
+						<set_object_name object="$shipCarrier" name="'MRC ' + $shipNames.random"/>	
 						<create_order id="'AssignCommander'" object="$shipCarrier" immediate="true">
 						  <param name="commander" value="$InvaderShip"/>
 						  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
@@ -680,11 +790,26 @@
 						<!-- Add subordinates -->
 						<do_all exact="$DestroyerCount" counter="$j">
 							<do_any>
-								<set_value name="$FleetDestMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
-								<set_value name="$FleetDestMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
-								<set_value name="$FleetDestMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
-								<set_value name="$FleetDestMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
-								<set_value name="$FleetDestMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+								<do_all>
+									<set_value name="$FleetDestMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+									<generate_loadout macro="macro.ship_spl_l_destroyer_01_a_macro" macros="[macro.weapon_spl_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+								</do_all>
+								<do_all>
+									<set_value name="$FleetDestMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+									<generate_loadout macro="macro.ship_tel_l_destroyer_01_a_macro" macros="[macro.weapon_tel_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+								</do_all>
+								<do_all>
+									<set_value name="$FleetDestMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+									<generate_loadout macro="macro.ship_par_l_destroyer_02_a_macro" macros="[macro.weapon_par_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+								</do_all>
+								<do_all>
+									<set_value name="$FleetDestMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+									<generate_loadout macro="macro.ship_ter_l_destroyer_01_a_macro" macros="[macro.weapon_ter_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+								</do_all>
+								<do_all>
+									<set_value name="$FleetDestMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+									<generate_loadout macro="macro.ship_arg_l_destroyer_01_a_macro" macros="[macro.weapon_arg_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+								</do_all>
 							</do_any>
 							<create_ship name="$shipDestro" macro="$FleetDestMacro" capturable="false" sector="$InvadingSector">
 								<owner exact="faction.mindlessmercenaries"/>
@@ -694,8 +819,22 @@
 								<pilot>
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
+								<people>
+									<fillpercent exact="100" />
+									<person role="service" weight="50">
+										<select faction="faction.argon" tags="tag.crew"/>
+									</person>
+									<person role="marine" weight="50">
+										<select faction="faction.argon" tags="tag.marine"/>
+									</person>
+								</people>
+								<ammunition>
+									<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+								</ammunition>
 								<safepos object="$shipCarrier" radius="3km" min="3km" max="10km"/>
 							</create_ship>
+							<apply_loadout object="$shipDestro" flags="weapons" loadout="$Loadouts.{1}"/>
+							<set_object_name object="$shipDestro" name="'MRC ' + $shipNames.random"/>	
 							<create_order id="'AssignCommander'" object="$shipDestro" immediate="true">
 							  <param name="commander" value="$shipCarrier"/>
 							  <param name="assignment" value="[assignment.attack, assignment.defence].random"/>
@@ -728,6 +867,18 @@
 								<pilot>
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
+								<people>
+									<fillpercent exact="100" />
+									<person role="service" weight="50">
+										<select faction="faction.argon" tags="tag.crew"/>
+									</person>
+									<person role="marine" weight="50">
+										<select faction="faction.argon" tags="tag.marine"/>
+									</person>
+								</people>
+								<ammunition>
+									<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+								</ammunition>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
 							</create_ship>
 							<create_order id="'AssignCommander'" object="$shipFrig" immediate="true">
@@ -779,6 +930,18 @@
 								<pilot>
 								  <select faction="faction.argon" tags="[tag.commander]"/>
 								</pilot>
+								<people>
+									<fillpercent exact="100" />
+									<person role="service" weight="50">
+										<select faction="faction.argon" tags="tag.crew"/>
+									</person>
+									<person role="marine" weight="50">
+										<select faction="faction.argon" tags="tag.marine"/>
+									</person>
+								</people>
+								<ammunition>
+									<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+								</ammunition>
 								<safepos object="$shipCarrier" radius="1km" min="1km" max="5km"/>
 							</create_ship>
 							<create_order id="'AssignCommander'" object="$shipSmall" immediate="true">
@@ -838,10 +1001,10 @@
 				<set_value name="$DestroyerCount" exact="$FleetPower.{2}"/>
 				<set_value name="$FrigateCount" exact="$FleetPower.{3}"/>
 				<set_value name="$FigtherCount" exact="$FleetPower.{4}"/>
-				<!-- Creating the fleet -->
-				<debug_text text="'xenonBuff - Setting fleet type'"/>
-				<set_value name="$fleetType" min="0" max="5"/>				
-				<do_if value="$fleetType ge 5">
+				<!-- Creating the fleet -->				
+				<set_value name="$fleetType" min="0" max="10"/>
+				<debug_text text="'xenonBuff - Setting fleet type:' + $fleetType"/>
+				<do_if value="$fleetType ge 9">
 					<run_actions ref="CreateKhaakInvaderFleet" result="$targets">
 						<param name="InvadingSector" value="$InvadingSector"/>
 						<param name="InvasionTarget" value="$InvasionTarget"/>
@@ -853,7 +1016,7 @@
 					</run_actions>
 				</do_if>
 				<do_else>
-					<do_if value="$fleetType ge 3">
+					<do_if value="$fleetType ge 5">
 						<run_actions ref="CreateXenonInvaderFleet" result="$targets">
 							<param name="InvadingSector" value="$InvadingSector"/>
 							<param name="InvasionTarget" value="$InvasionTarget"/>
@@ -966,7 +1129,7 @@
 												</loadout>
 												<pilot>
 												  <select faction="faction.xenon" tags="[tag.commander]"/>
-												</pilot>
+												</pilot>												
 												<safepos object="$shipFrig" radius="1km" min="1km" max="5km"/>
 											</create_ship>
 											<create_order object="$shipSmall" id="'Escort'" default="true">
@@ -1043,13 +1206,29 @@
 				<param name="OtherTarget"/>
 			</params>
 			<actions>
-				<debug_text text="'xenonBuff - adding allies to attack ' + $Target"/>
+				<set_value name="$shipNames" exact="['Dragonstar','Apocalypse','Vulture','Zenith','Skullwarrior','The Paladin','Death','The Commissioner','Covenant','Elysium','Rebellious']"/>
+				<debug_text text="'xenonBuff - adding allies to attack ' + $Target + ' and ' + $OtherTarget"/>
 				<do_any>
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
-					<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_spl_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_spl_l_destroyer_01_a_macro" macros="[macro.weapon_spl_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_tel_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_tel_l_destroyer_01_a_macro" macros="[macro.weapon_tel_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_par_l_destroyer_02_a_macro" />
+						<generate_loadout macro="macro.ship_par_l_destroyer_02_a_macro" macros="[macro.weapon_par_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_ter_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_ter_l_destroyer_01_a_macro" macros="[macro.weapon_ter_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
+					<do_all>
+						<set_value name="$FleetLeaderMacro" exact="macro.ship_arg_l_destroyer_01_a_macro" />
+						<generate_loadout macro="macro.ship_arg_l_destroyer_01_a_macro" macros="[macro.weapon_arg_l_destroyer_01_mk1_macro]" result="$Loadouts" flags="weapons"/>
+					</do_all>
 				</do_any>
 				<create_ship name="$fleetLeader" macro="$FleetLeaderMacro" sector="player.sector">
 					<owner exact="faction.invasionally"/>
@@ -1059,8 +1238,22 @@
 					<pilot>
 						<select faction="faction.argon" tags="tag.aipilot"/>
 					</pilot>
+					<people>
+						<fillpercent exact="100" />
+						<person role="service" weight="50">
+							<select faction="faction.argon" tags="tag.crew"/>
+						</person>
+						<person role="marine" weight="50">
+							<select faction="faction.argon" tags="tag.marine"/>
+						</person>
+					</people>
+					<ammunition>
+						<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+					</ammunition>
 					<safepos object="player.ship" radius="1km" min="3km" max="5km"/>
 				</create_ship>
+				<apply_loadout object="$fleetLeader" flags="weapons" loadout="$Loadouts.{1}"/>
+				<set_object_name object="$fleetLeader" name="'GND ' + $shipNames.random"/>
 				<add_effect object="$fleetLeader.zone" effect="'jump_jumpin_capship'">
 				  <position value="$fleetLeader.position"/>
 				  <rotation value="$fleetLeader.rotation"/>
@@ -1101,6 +1294,18 @@
 						<pilot>
 							<select faction="faction.argon" tags="tag.aipilot"/>
 						</pilot>
+						<people>
+							<fillpercent exact="100" />
+							<person role="service" weight="50">
+								<select faction="faction.argon" tags="tag.crew"/>
+							</person>
+							<person role="marine" weight="50">
+								<select faction="faction.argon" tags="tag.marine"/>
+							</person>
+						</people>
+						<ammunition>
+							<ammunition macro="ship_gen_s_lasertower_01_a_macro" exact="20"/>
+						</ammunition>
 						<safepos object="$fleetLeader" radius="1km" min="3km" max="5km"/>
 					</create_ship>
 					<add_effect object="$fleetShip.zone" effect="'jump_jumpin_capship'">
@@ -1119,6 +1324,7 @@
 				<return value="$AllyFleet" />
 			</actions>
 		</library>
+		
 		
 		<!-- Kill Fleet Mission -->
 		<cue name="kill_invasion_fleet">
@@ -1140,7 +1346,7 @@
 					<set_value name="$AdditionalReward" exact="ware.modpart_shipnanoweave_t3" />
 					<set_value name="$AdditionalReward" exact="ware.modpart_weaponchamber_t3" />
 				</do_any>
-				
+			
 				<do_if value="$AdditionalReward != null">
 				  <set_value name="$RewardObj" exact="$AdditionalReward"/>
 				  <set_value name="$RewardText" exact="$RewardObj.name"/>
@@ -1152,6 +1358,11 @@
 				  <objective step="1" action="objective.defeat" group="$InvaderWave"/>
 				</create_mission>			
 				<set_objective cue="this" step="1" action="objective.defeat" text="'Enemy Invasion Fleet'" group="$InvaderWave"/>
+				
+				<speak actor="player.computer" priority="100">
+				  <text line="812" comment="Mission information."/>
+				  <text line="813" comment="Received."/>
+				</speak>
 			</actions>
 			<cues>
 				<cue name="invasion_fleet_engage_event">
@@ -1166,15 +1377,37 @@
 					<delay exact="6s"/>
 					<actions>
 						<!-- faction.alliance -->
+						<set_value name="$AllyLeader" exact="null"/>
 						<do_if value="$AllyFleetSummoned != 1">
 							<set_value name="$AllyFleetSummoned" exact="1"/>
 							<run_actions ref="AddAllyFleet" result="$AllyFleet">
 								<param name="Target" value="$InvaderShip"/>
 								<param name="OtherTarget" value="$InvaderWave"/>
 							</run_actions>
+							<set_value name="$AllyLeader" exact="$AllyFleet.{1}"/>
 							<show_help custom="'Several factions put their differences aside and send us some aid. We are not alone in this fight.'" log="true" position="2" force="true" duration="7s"/>
+							<signal_cue_instantly cue="AllyFleetLeaderSpeak"/>
 						</do_if>
 					</actions>
+					<cues>						
+						<cue name="AllyFleetLeaderSpeak" instantiate="true">
+							<conditions>
+								<event_cue_signalled />
+							</conditions>
+							<delay exact="5s"/>
+							<actions>
+								<set_value name="$FleetLeaderPilot" exact="$AllyLeader.pilot"/>
+								<speak actor="$AllyLeader.pilot" priority="100">
+								  <text line="3122" comment="Navigation."/>
+								  <text line="4001" comment="Plot the course."/>
+								  <text line="3018" comment="Wingmen."/>
+								  <text line="4005" comment="Follow me."/>
+								  <text line="3004" comment="XO."/>
+								  <text line="5031" comment="Keep an eye on sensors."/>
+								</speak>
+							</actions>
+						</cue>
+					</cues>
                 </cue>		
 				<cue name="invasion_fleet_invade_sector">
 					<conditions>
@@ -1185,6 +1418,9 @@
 						<debug_text text="'xenonBuff - invader fleet leader changing sector ' + $InvaderShip"/>
 						<find_sector_in_range name="$sectorInAlert" object="$InvaderShip" maxdistance="0" multiple="false"/>						
 						<debug_text text="'xenonBuff - invader fleet flying over:' + $sectorInAlert.name + '. Teleporting fleet'"/>
+						<speak actor="player.computer" priority="100">
+						  <text line="271" comment="lost recognition"/>
+						</speak>
 						<!-- teleport fleet subordinates to Fleet Leader -->
 						<!-- <debug_text text="'xenonBuff - invader fleet to be teleported: ' + $InvaderWave"/> -->
 						<do_all exact="$InvaderWave.count" counter="$i">
@@ -1234,13 +1470,15 @@
 						<set_value name="player.entity.$XenonBuffedInvasion" exact="0"/>
 						<do_if value="$AllyFleet != null">
 							<do_all exact="$AllyFleet.count" counter="$i">
-								<add_effect object="$InvaderWave.{$i}.zone" effect="'jump_jumpin_capship'">
-								  <position value="$InvaderWave.{$i}.position"/>
-								  <rotation value="$InvaderWave.{$i}.rotation"/>
+								<add_effect object="$AllyFleet.{$i}.zone" effect="'jump_jumpin_capship'">
+								  <position value="$AllyFleet.{$i}.position"/>
+								  <rotation value="$AllyFleet.{$i}.rotation"/>
 								</add_effect>
-							</do_all>							
+							</do_all>
 							<destroy_group group="$AllyFleet" explosion="false"/>
 						</do_if>
+						<signal_cue_instantly cue="MissionFinishSpeak"/>
+						
 						<show_help custom="'Invasion Fleet has being defeated.'" log="false" position="2" force="true" duration="7s" comment="Mission accomplished"/>
 						<set_value name="$Header" exact="'\033G Invasion Fleet Defeated'"/>
 						<set_value name="$Body" exact="'\033W Commander, the \033Invasion Fleet \033Whas being defeated. The Gate Network is safe, for now.'"/>
@@ -1262,6 +1500,21 @@
 						</do_if>
 						<reset_cue cue="kill_invasion_fleet"/>
 					</actions>
+					<cues>
+						<cue name="MissionFinishSpeak" instantiate="true">
+							<conditions>
+								<event_cue_signalled />
+							</conditions>
+							<delay exact="1s"/>
+							<actions>
+								<debug_text text="'xenonBuff - mission finish notif: ' + $ReportActor"/>
+								<speak actor="player.computer" priority="100">
+								  <text line="30224711" comment="Mission archieved"/>
+								  <text line="270" comment="Gained recognition"/>
+								</speak>
+							</actions>
+						</cue>
+					</cues>
                 </cue>
 			</cues>
 		</cue>

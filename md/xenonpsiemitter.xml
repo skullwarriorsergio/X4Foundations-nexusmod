@@ -160,6 +160,7 @@
 				</pilot>
 				<safepos object="$Emitter" radius="13km" min="10km" max="20km"/>
 			</create_ship>
+			<set_object_name object="$leader" name="'Deranged ' + $leader.name"/>
 			<create_order id="'Patrol'" object="$leader" default="true">
 				<param name="space" value="$leader.sector"/>
 			</create_order>
@@ -174,6 +175,7 @@
 					</pilot>
 					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
 				</create_ship>
+				<set_object_name object="$mship" name="'Deranged ' + $mship.name"/>
 				<create_order id="'AssignCommander'" object="$mship" immediate="true">
 				  <param name="commander" value="$leader"/>
 				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
@@ -191,6 +193,7 @@
 					</pilot>
 					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
 				</create_ship>
+				<set_object_name object="$sship" name="'Deranged ' + $sship.name"/>
 				<create_order id="'AssignCommander'" object="$sship" immediate="true">
 				  <param name="commander" value="$leader"/>
 				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
