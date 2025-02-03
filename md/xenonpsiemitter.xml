@@ -1,32 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mdscript name="XenonPsiEmitter" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="md.xsd">
   <cues>
-	<cue name="EmitterDetected" instantiate="true" checktime="player.age + 15s">
+	<cue name="EmitterDetected" instantiate="true">
 		<conditions>
-			<event_object_changed_zone object="player.entity" />
-			<check_value value="player.ship != null"/>
+			<event_object_changed_sector object="player.ship" />
 		</conditions>
-		<delay exact="3s"/>
+		<delay exact="7s"/>
 		<actions>
 			<find_object groupname="$emittersInSector" space="player.ship.sector" owner="faction.xenon"  multiple="true">
 			  <match_any>
 				<match macro="macro.xenon_psi_emitter_macro"/>
 			  </match_any>
 			</find_object>
-			<do_if value="$emittersInSector.count gt 0">
+			<debug_text text="'xenonBuff - Emitters: Checking for emitter in sector'"/>	
+			<do_if value="$emittersInSector.count gt 0 and @player.entity.$LastSectorNotification != player.ship.sector">
+				<debug_text text="'xenonBuff - Emitters: notification function triggered'"/>
+				<do_any>
+					<speak actor="player.computer" priority="100">
+					  <text line="506" comment="Iregularity detected"/>
+					  <text line="605" comment="in"/>
+					  <text line="606" comment="unknow location"/>
+					</speak>
+					<speak actor="player.computer" priority="100">
+					  <text line="509" comment="Communication detected"/>
+					  <text line="604" comment="in system"/>
+					  <text line="30229204" comment="purpose unknow"/>
+					</speak>
+					<speak actor="player.computer" priority="100">
+					  <text line="30225102" comment="Unknow signal source triangulated"/>
+					  <text line="511" comment="within sensor range"/>
+					</speak>
+				</do_any>
 				<show_help custom="'A signal with xenon signature has been detected pulsating in this sector.'" log="false" position="3" force="true" duration="5s"/>
+				
 				<set_value name="$Header" exact="'\033R Xenon Psi Emitter detected'"/>
-				<set_value name="$Body" exact="'\033WLong-range sensors have detected Xenon Psi Emitters somewhere in \033G' + player.ship.sector.name +'\033W You should destroy them before they pose a serious threat.'"/>
+				<set_value name="$Body" exact="'\033WLong-range sensors have detected Xenon Psi Emitters somewhere in \033G' + player.sector.name +'\033W You should destroy them before they pose a serious threat.'"/>
 				<show_notification text="$Header + '\n' + $Body" timeout="10s" priority="1" comment="Emitter found"/>
-				<write_to_logbook title="$Header" text="$Body" category="alerts"/>
+				<set_value name="player.entity.$LastSectorNotification" exact="player.sector"/>
+				<!-- <write_to_logbook title="$Header" text="$Body" category="alerts"/> -->
 				<remove_value name="$Header"/>
 				<remove_value name="$Body"/>
-				<reset_cue cue="this"/>
+			</do_if>
+			<do_if value="@player.entity.$LastSectorNotification != player.sector">
+				<debug_text text="'xenonBuff - Emitters: Resetting last sector notified'"/>	
+				<debug_text text="'xenonBuff - Emitters: before:' + @player.entity.$LastSectorNotification.name"/>
+				<debug_text text="'xenonBuff - Emitters: actual:' + player.sector.name"/>
+				<set_value name="player.entity.$LastSectorNotification" exact="null"/>
 			</do_if>
 			<remove_value name="$emittersInSector"/>
 		</actions>
 	</cue>
-    <cue name="XPE_Main" instantiate="true" checkinterval="20min" checktime="player.age + 25s">
+	
+    <cue name="XPE_Main" instantiate="true" checkinterval="40min" checktime="player.age + 25s">
 		<conditions>
 			<check_age min="96h"/>
 		</conditions>
@@ -52,9 +77,10 @@
 				<match macro="macro.xenon_psi_emitter_macro"/>
 			  </match_any>
 			</find_object>
-			<do_if value="player.age ge (@player.entity.$LastTimeEmitter + 1h) or $emitters.count le 0">
+			<do_if value="player.age ge (@player.entity.$LastTimeEmitter + 4h) or $emitters.count le 0">
 				<!-- Update timer -->				
 				<set_value name="player.entity.$LastTimeEmitter" exact="player.age"/>
+				<debug_text text="'xenonBuff - Emitter spawning run: ' + @player.entity.$LastTimeEmitter"/>
 				<run_actions ref="CheckSpawnEmitter" result="$newEmitter">				
 					<params>
 						<param name="EmittersCount" value="@emitters.count"/>
@@ -66,7 +92,101 @@
 			</do_if>
 			<!-- Trigger Emitter spawns -->
 			<signal_cue_instantly cue="trigger_emitters" param="[$emitters, $emitters.count]" />
+		</actions>		
+	</cue>
+	
+	<cue name="Emitter_Hunter" instantiate="true">
+		<actions>
+			<create_group groupname="$emittersInSector" />
 		</actions>
+		<cues>
+			<cue name="Emitter_Hunter_Init">
+				<conditions>
+					<event_object_signalled object="player.entity" param="'startactivity'" param2="activity.scan_longrange" />
+				</conditions>
+				<actions>
+					<do_if value="Emitter_Hunter.hasmission">						
+						<remove_mission cue="Emitter_Hunter"/>
+					</do_if>
+					<find_object groupname="$emittersInSector" space="player.ship.sector" owner="faction.xenon"  multiple="true">
+					  <match_any>
+						<match macro="macro.xenon_psi_emitter_macro"/>
+					  </match_any>
+					</find_object>
+					<set_value name="$Ship" exact="player.occupiedship"/>
+					<do_if value="@$Ship">
+						<signal_cue cue="UpdateMission"/>
+					</do_if>
+					<do_else>
+						<signal_cue cue="Cleanup" />
+					</do_else>
+				</actions>
+				<cues>
+					<cue name="EmitterDestroyed" instantiate="true">
+						<conditions>
+							<check_all>
+								<event_object_destroyed group="$emittersInSector"/>
+							</check_all>
+						</conditions>
+						<actions>
+							<do_if value="Emitter_Hunter.hasmission">
+								<signal_cue cue="UpdateMission"/>
+							</do_if>
+						</actions>
+					</cue>
+					<cue name="PlayerStoppedScanning">
+						<conditions>
+							<check_all>
+								<event_object_signalled object="player.entity" param="'stopactivity'" param2="activity.scan_longrange" />
+							</check_all>
+						</conditions>
+						<actions>
+							<signal_cue cue="Cleanup"/>
+						</actions>
+					</cue>
+				</cues>
+			</cue>
+			<cue name="UpdateMission" instantiate="true">
+				<conditions>
+					<event_cue_signalled/>
+				</conditions>
+				<actions>
+					<create_group groupname="$emittersInSector" />
+					<set_value name="$MissionText" exact="'Xenon Psi Emitter'"/>
+					<find_object groupname="$emittersInSector" space="player.ship.sector" owner="faction.xenon" sortbydistanceto="player.entity" multiple="true">
+					  <match_any>
+						<match macro="macro.xenon_psi_emitter_macro"/>
+					  </match_any>
+					</find_object>
+					<set_value name="$target" exact="null"/>
+					<do_if value="$emittersInSector.count gt 0">
+						<set_value name="$target" exact="$emittersInSector.{1}"/>
+					</do_if>					
+					<do_if value="$target != null and player.entity.distanceto.{$target} le 100000">						
+						<create_mission cue="Emitter_Hunter" name="'Destroy emitter'" description="$MissionText" faction="faction.player" type="missiontype.guidance" location="$emittersInSector.{1}.position">
+							<briefing>
+								<objective step="1" action="objective.flyto" text="$MissionText" object="$target" radius="42km"/>
+							</briefing>
+							<objective step="1" action="objective.flyto" text="$MissionText" object="$target" radius="42km"/>
+						</create_mission>
+					</do_if>
+					<do_else>
+						<signal_cue cue="Cleanup"/>					
+					</do_else>
+				</actions>
+			</cue>
+			<cue name="Cleanup" instantiate="true">
+				<conditions>
+					<event_cue_signalled/>
+				</conditions>
+				<actions>
+					<do_if value="Emitter_Hunter.hasmission">
+						<remove_mission cue="Emitter_Hunter"/>
+					</do_if>
+					<reset_cue cue="Emitter_Hunter_Init"/>
+				</actions>
+			</cue>
+		</cues>
 	</cue>
 	
 	<library name="TestCheckSpawnEmitter" purpose="run_actions">
@@ -85,7 +205,7 @@
 				<set_value name="$choosenSectorCenter" exact="position.[player.ship.position.x, player.ship.position.y, player.ship.position.z]" />
 				
 				<create_object name="$TargetSatellite" macro="macro.xenon_psi_emitter_macro" owner="faction.xenon" sector="$choosenSector">
-				  <safepos x="$choosenSectorCenter.x + $deltaX" y="$choosenSectorCenter.y" z="$choosenSectorCenter.z + $deltaZ" radius="10km" min="4km" max="10km"/>
+				  <safepos x="$choosenSectorCenter.x + $deltaX" y="$choosenSectorCenter.y" z="$choosenSectorCenter.z + $deltaZ" radius="40km" min="10km" max="40km"/>
 				</create_object>
 				<return value="$TargetSatellite" />
 			</do_if>
@@ -106,9 +226,12 @@
 				<set_value name="$choosenSector" exact="$AllSectors.random" />
 				<debug_text text="'xenonBuff - Emiter: Spawn Emitter in ' + $choosenSector.name"/>
 				<!-- Deploy Emitter -->
-				<set_value name="$deltaX" min="-100km" max="100km"/>
-				<set_value name="$deltaZ" min="-100km" max="100km"/>
+				<set_value name="$deltaX" min="-60km" max="60"/>
+				<set_value name="$deltaZ" min="-60" max="60"/>
 				<set_value name="$choosenSectorCenter" exact="$choosenSector.coreposition"/>
+				<set_value name="$Header" exact="'\033R Deep Space Sensors : Psi Emitter Detected'"/>
+				<set_value name="$Body" exact="'Commander, deep space sensors has detected a posible xenon psi emitter in \033G' + $choosenSector.name + '\033W. We should investigate.'"/>
+				<write_to_logbook title="$Header" text="$Body" category="alerts"/>
 				<create_object name="$TargetSatellite" macro="macro.xenon_psi_emitter_macro" owner="faction.xenon" sector="$choosenSector">
 				  <safepos x="$choosenSectorCenter.x + $deltaX" y="$choosenSectorCenter.y" z="$choosenSectorCenter.z + $deltaZ" radius="40km" min="10km" max="40km"/>
 				</create_object>
@@ -123,9 +246,9 @@
 		</params>
 		<actions>
 			<set_value name="$CarrierCount" min="0" max="0"/>
-			<set_value name="$DestroyerCount" min="0" max="$power / 6"/>
+			<set_value name="$DestroyerCount" min="0" max="0"/>
 			<set_value name="$FrigateCount" min="0" max="$power / 3"/>
-			<set_value name="$FigtherCount" min="1" max="$power / 2"/>
+			<set_value name="$FigtherCount" min="2" max="$power / 2"/>
 			<debug_text text="'xenonBuff - emitter spawn power calculated'"/>
 			<return value="[$CarrierCount, $DestroyerCount,$FrigateCount, $FigtherCount]" />
 		</actions>
@@ -160,7 +283,7 @@
 				</pilot>
 				<safepos object="$Emitter" radius="13km" min="10km" max="20km"/>
 			</create_ship>
-			<set_object_name object="$leader" name="'Deranged ' + $leader.name"/>
+			<set_object_name object="$leader" name="'Deranged xenon'"/>
 			<create_order id="'Patrol'" object="$leader" default="true">
 				<param name="space" value="$leader.sector"/>
 			</create_order>
@@ -175,7 +298,7 @@
 					</pilot>
 					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
 				</create_ship>
-				<set_object_name object="$mship" name="'Deranged ' + $mship.name"/>
+				<set_object_name object="$mship" name="'Deranged xenon'"/>
 				<create_order id="'AssignCommander'" object="$mship" immediate="true">
 				  <param name="commander" value="$leader"/>
 				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>
@@ -193,7 +316,7 @@
 					</pilot>
 					<safepos object="$leader" radius="3km" min="3km" max="8km"/>
 				</create_ship>
-				<set_object_name object="$sship" name="'Deranged ' + $sship.name"/>
+				<set_object_name object="$sship" name="'Deranged xenon'"/>
 				<create_order id="'AssignCommander'" object="$sship" immediate="true">
 				  <param name="commander" value="$leader"/>
 				  <param name="assignment" value="[assignment.attack, assignment.interception, assignment.defence].random"/>

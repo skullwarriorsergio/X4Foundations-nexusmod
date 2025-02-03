@@ -8,7 +8,7 @@
 			<param name="range" value="class.zone"/>
 		  </order>
 		</orders>
-		<category faction="xenon" tags="[invader]" size="ship_xl"/>
+		<category faction="xenon" tags="[invader, factionlogic, military, carrier]" size="ship_xl"/>
 		<quota maxgalaxy="1"/>
 		<environment buildatshipyard="false" gate="true"/>
 		<location class="galaxy" macro="xu_ep2_universe_macro" faction="xenon" relation="self" comparison="exact"/>
